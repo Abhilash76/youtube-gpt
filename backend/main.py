@@ -10,6 +10,8 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from get_transcripts import gettranscripts
 from generate_summary import Summarize
+from rag.faiss_manager import FAISSManager
+from rag.rag_workflow import AgenticRAG
 
 app = FastAPI()
 
@@ -21,6 +23,19 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Initialize FAISS Manager
+faiss_manager = FAISSManager()
+
+# Initialize RAG Agent (lazy initialization - will be created on first use)
+rag_agent = None
+
+def get_rag_agent():
+    """Get or create the RAG agent instance (singleton pattern)."""
+    global rag_agent
+    if rag_agent is None:
+        rag_agent = AgenticRAG()
+    return rag_agent
 
 class SearchRequest(BaseModel):
     query: str
@@ -52,7 +67,15 @@ async def get_transcript(request: TranscriptRequest):
         file_path = f"{request.title.replace(' ', '_').replace('?', '').replace('|', '')}.txt"
         gettranscripts.save_transcript(request.title, transcript_text, file_path)
         
-        return {"transcript": transcript_text}
+        # Create and save FAISS index for RAG
+        try:
+            index, chunks = faiss_manager.create_index(transcript_text, video_id)
+            faiss_manager.save_index(index, chunks, video_id)
+        except Exception as e:
+            # Log error but don't fail the transcript request
+            print(f"Warning: Failed to create FAISS index: {e}")
+        
+        return {"transcript": transcript_text, "video_id": video_id}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -91,6 +114,64 @@ async def grade_mcq(request: GradeRequest):
             request.user_answers
         )
         return grading_result
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+class ChatRequest(BaseModel):
+    video_id: str
+    query: str
+
+@app.post("/chat")
+async def chat_with_video(request: ChatRequest):
+    """Chat with video using RAG workflow."""
+    try:
+        # Check if index exists
+        if not faiss_manager.index_exists(request.video_id):
+            raise HTTPException(
+                status_code=404, 
+                detail=f"FAISS index not found for video_id: {request.video_id}. Please generate transcript first."
+            )
+        
+        # Load index and chunks
+        index, chunks = faiss_manager.load_index(request.video_id)
+        
+        # Search for relevant context
+        relevant_chunks = faiss_manager.search(index, chunks, request.query, k=3)
+        context = "\n\n".join(relevant_chunks)
+        
+        # Use RAG workflow to generate answer
+        rag_agent = get_rag_agent()
+        
+        # Build prompt for Qwen
+        prompt = f"""<|im_start|>system
+You are a helpful assistant. Use the following context from a video transcript to answer the user's question accurately. If the context doesn't contain enough information, say so.
+Context:
+{context}<|im_end|>
+<|im_start|>user
+{request.query}<|im_end|>
+<|im_start|>assistant
+"""
+        
+        # Generate answer using the generator
+        # Note: This is a simplified version. For production, you'd want to properly
+        # configure the generation parameters
+        try:
+            result = rag_agent.generator(
+                prompt,
+                max_new_tokens=256,
+                temperature=0.7,
+                do_sample=True,
+                return_full_text=False
+            )
+            answer = result[0]['generated_text'].strip()
+        except Exception as e:
+            # Fallback if generation fails
+            print(f"Generation error: {e}")
+            answer = f"Based on the video transcript, here's what I found:\n\n{context[:500]}..."
+        
+        return {"answer": answer, "context_used": len(relevant_chunks)}
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

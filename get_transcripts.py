@@ -13,7 +13,7 @@ class gettranscripts:
 
     def get_transcript(video_id: str):
         """Fetch transcript with timestamps from YouTube."""
-        transcript = YouTubeTranscriptApi().list(video_id).find_transcript(["en-GB", "en-US", "en"]).fetch(preserve_formatting=True)
+        transcript = YouTubeTranscriptApi().list(video_id).find_transcript(["en-GB", "en-US", "en", "de", "nl"]).fetch(preserve_formatting=True)
         return transcript
 
     def format_transcript(transcript):

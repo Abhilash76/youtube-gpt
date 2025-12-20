@@ -6,6 +6,7 @@ import VideoPlayer from './components/VideoPlayer';
 import Controls from './components/Controls';
 import OutputDisplay from './components/OutputDisplay';
 import MCQDisplay from './components/MCQDisplay';
+import ChatInterface from './components/ChatInterface';
 import api from './api';
 import './App.css'; // Ensure we use the default or custom CSS
 
@@ -20,6 +21,8 @@ function App() {
   const [error, setError] = useState('');
   const [llmError, setLlmError] = useState('');
   const [showTranscript, setShowTranscript] = useState(false);
+  const [showChat, setShowChat] = useState(false);
+  const [videoId, setVideoId] = useState(null);
 
   const handleSearch = async (query) => {
     setLoading(true);
@@ -50,6 +53,8 @@ function App() {
     setMcqs([]);
     setGradingResults(null);
     setShowTranscript(false);
+    setShowChat(false);
+    setVideoId(null);
     setLlmError('');
     // Scroll to player
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -69,6 +74,7 @@ function App() {
           title: selectedVideo.title
         });
         setTranscript(response.data.transcript);
+        setVideoId(response.data.video_id || selectedVideo.id);
         setShowTranscript(false);
       } catch (err) {
         setError('Failed to get transcript. ' + (err.response?.data?.detail || err.message));
@@ -148,6 +154,14 @@ function App() {
     }
   };
 
+  const handleChatWithVideo = () => {
+    if (!videoId) {
+      setError('Video ID not available. Please wait for transcript to be generated.');
+      return;
+    }
+    setShowChat(true);
+  };
+
   return (
     <div className="app-container">
       <header className="app-header">
@@ -207,6 +221,7 @@ function App() {
             <Controls
               onSummarize={handleSummarize}
               onGenerateMCQ={handleGenerateMCQ}
+              onChatWithVideo={handleChatWithVideo}
               loading={loading}
               hasTranscript={!!transcript}
             />
@@ -222,6 +237,12 @@ function App() {
                 gradingResults={gradingResults}
                 loading={loading}
               />
+            )}
+
+            {showChat && videoId && (
+              <div className="chat-container">
+                <ChatInterface videoId={videoId} onClose={() => setShowChat(false)} />
+              </div>
             )}
           </div>
         )}
