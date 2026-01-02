@@ -15,9 +15,13 @@ faiss-cpu
 accelerate
 bitsandbytes
 huggingface-hub
+pinecone-client
+cohere
 
 # LangChain
 langchain
+langchain-community
+langchain-pinecone
 langgraph
 
 # API / UI

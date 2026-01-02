@@ -1,17 +1,77 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-from youtubesearchpython import VideosSearch
 import sys
 import os
+import asyncio
+from concurrent.futures import ThreadPoolExecutor
+import httpx
+
+# Monkey patch to fix httpx compatibility issue with youtube-search-python
+# Newer httpx versions don't accept 'proxies' in post()/get() directly
+# MUST be done before importing VideosSearch
+def patch_youtube_search_httpx():
+    """Fix httpx compatibility for youtube-search-python library."""
+    from youtubesearchpython.core.requests import RequestCore
+    from youtubesearchpython.core.constants import userAgent
+    
+    def fixed_sync_post(self):
+        """Fixed syncPostRequest that works with newer httpx versions."""
+        if self.proxy:
+            # Use httpx.Client with proxies for newer httpx versions
+            with httpx.Client(proxies=self.proxy) as client:
+                return client.post(
+                    self.url,
+                    headers={"User-Agent": userAgent},
+                    json=self.data,
+                    timeout=self.timeout
+                )
+        else:
+            return httpx.post(
+                self.url,
+                headers={"User-Agent": userAgent},
+                json=self.data,
+                timeout=self.timeout
+            )
+    
+    def fixed_sync_get(self):
+        """Fixed syncGetRequest that works with newer httpx versions."""
+        if self.proxy:
+            with httpx.Client(proxies=self.proxy) as client:
+                return client.get(
+                    self.url,
+                    headers={"User-Agent": userAgent},
+                    timeout=self.timeout,
+                    cookies={'CONSENT': 'YES+1'}
+                )
+        else:
+            return httpx.get(
+                self.url,
+                headers={"User-Agent": userAgent},
+                timeout=self.timeout,
+                cookies={'CONSENT': 'YES+1'}
+            )
+    
+    # Apply the patch
+    RequestCore.syncPostRequest = fixed_sync_post
+    RequestCore.syncGetRequest = fixed_sync_get
+
+# Apply the patch BEFORE importing VideosSearch
+try:
+    patch_youtube_search_httpx()
+except Exception as e:
+    print(f"Warning: Could not patch youtube-search-python: {e}")
+
+# Now import VideosSearch after the patch is applied
+from youtubesearchpython import VideosSearch
 
 # Add parent directory to path to import existing modules
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from get_transcripts import gettranscripts
 from generate_summary import Summarize
-from rag.faiss_manager import FAISSManager
-from rag.rag_workflow import AgenticRAG
+from rag.rag_workflow import TranscriptRAG
+import traceback
 
 app = FastAPI()
 
@@ -24,18 +84,19 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Initialize FAISS Manager
-faiss_manager = FAISSManager()
+# Initialize TranscriptRAG for Pinecone workflow
+try:
+    transcript_rag = TranscriptRAG()
+except Exception as e:
+    print(f"ERROR: Failed to initialize TranscriptRAG: {e}")
+    print(traceback.format_exc())
+    transcript_rag = None
 
-# Initialize RAG Agent (lazy initialization - will be created on first use)
-rag_agent = None
+# In-memory transcript cache for Pinecone workflow
+transcript_cache = {}
 
-def get_rag_agent():
-    """Get or create the RAG agent instance (singleton pattern)."""
-    global rag_agent
-    if rag_agent is None:
-        rag_agent = AgenticRAG()
-    return rag_agent
+# Thread pool executor for blocking operations
+executor = ThreadPoolExecutor(max_workers=4)
 
 class SearchRequest(BaseModel):
     query: str
@@ -50,11 +111,55 @@ class SummaryRequest(BaseModel):
 @app.post("/search")
 async def search_videos(request: SearchRequest):
     try:
-        search = VideosSearch(request.query, limit=5)
-        results = search.result()["result"]
+        # Validate query
+        if not request.query or not request.query.strip():
+            raise HTTPException(status_code=400, detail="Query cannot be empty")
+        
+        query = request.query.strip()
+        
+        # Run blocking search operation in thread pool to avoid blocking async event loop
+        def perform_search():
+            try:
+                search = VideosSearch(query, limit=5)
+                return search.result()
+            except Exception as e:
+                print(f"VideosSearch error: {e}")
+                raise
+        
+        # Execute search in thread pool
+        loop = asyncio.get_event_loop()
+        search_result = await loop.run_in_executor(executor, perform_search)
+        
+        # Validate result structure
+        if not search_result:
+            raise HTTPException(
+                status_code=500, 
+                detail="Empty response from YouTube search"
+            )
+        
+        if "result" not in search_result:
+            # Log the actual response for debugging
+            print(f"Unexpected search result structure: {search_result}")
+            raise HTTPException(
+                status_code=500, 
+                detail="Invalid response format from YouTube search"
+            )
+        
+        results = search_result["result"]
+        
+        # Ensure results is a list
+        if not isinstance(results, list):
+            print(f"Results is not a list, type: {type(results)}, value: {results}")
+            results = []
+        
         return {"results": results}
+    except HTTPException:
+        raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        error_msg = str(e)
+        print(f"Search error: {error_msg}")
+        print(traceback.format_exc())
+        raise HTTPException(status_code=500, detail=f"Search failed: {error_msg}")
 
 @app.post("/transcript")
 async def get_transcript(request: TranscriptRequest):
@@ -67,13 +172,22 @@ async def get_transcript(request: TranscriptRequest):
         file_path = f"{request.title.replace(' ', '_').replace('?', '').replace('|', '')}.txt"
         gettranscripts.save_transcript(request.title, transcript_text, file_path)
         
-        # Create and save FAISS index for RAG
-        try:
-            index, chunks = faiss_manager.create_index(transcript_text, video_id)
-            faiss_manager.save_index(index, chunks, video_id)
-        except Exception as e:
-            # Log error but don't fail the transcript request
-            print(f"Warning: Failed to create FAISS index: {e}")
+        # Store transcript in cache for Pinecone workflow
+        transcript_cache[video_id] = transcript_text
+        
+        # Create Pinecone index and ingest transcript
+        if transcript_rag is None:
+            print("ERROR: TranscriptRAG not initialized. Check environment variables and Ollama connection.")
+        else:
+            try:
+                transcript_rag.create_transcript_index(video_id)
+                transcript_rag.ingest_transcript(transcript_text, video_id, strategy="semantic")
+            except Exception as e:
+                # Log error but don't fail the transcript request
+                print(f"Warning: Failed to create Pinecone index or ingest transcript: {e}")
+                print(traceback.format_exc())
+        
+        # Note: FAISS index creation removed - using Pinecone only
         
         return {"transcript": transcript_text, "video_id": video_id}
     except Exception as e:
@@ -123,53 +237,75 @@ class ChatRequest(BaseModel):
 
 @app.post("/chat")
 async def chat_with_video(request: ChatRequest):
-    """Chat with video using RAG workflow."""
+    """Chat with video using RAG workflow with Pinecone."""
     try:
-        # Check if index exists
-        if not faiss_manager.index_exists(request.video_id):
+        # Retrieve transcript text from cache
+        transcript_text = transcript_cache.get(request.video_id)
+        
+        if not transcript_text:
+            # Fallback: try to retrieve from saved file
+            import glob
+            import os
+            transcript_files = glob.glob("transcripts/*.txt")
+            for file_path in transcript_files:
+                # Try to match by reading file and checking if it contains the video_id
+                # or by filename if video_id is in filename
+                if request.video_id in os.path.basename(file_path):
+                    with open(file_path, 'r', encoding='utf-8') as f:
+                        lines = f.readlines()
+                        if len(lines) > 2:
+                            transcript_text = ''.join(lines[2:]).strip()
+                            # Cache it for future use
+                            transcript_cache[request.video_id] = transcript_text
+                            break
+        
+        if not transcript_text:
             raise HTTPException(
-                status_code=404, 
-                detail=f"FAISS index not found for video_id: {request.video_id}. Please generate transcript first."
+                status_code=404,
+                detail=f"Transcript not found for video_id: {request.video_id}. Please generate transcript first using /transcript endpoint."
             )
         
-        # Load index and chunks
-        index, chunks = faiss_manager.load_index(request.video_id)
+        # Query transcript using TranscriptRAG
+        if transcript_rag is None:
+            raise HTTPException(
+                status_code=503,
+                detail="RAG service not available. Check server logs for initialization errors."
+            )
         
-        # Search for relevant context
-        relevant_chunks = faiss_manager.search(index, chunks, request.query, k=3)
-        context = "\n\n".join(relevant_chunks)
-        
-        # Use RAG workflow to generate answer
-        rag_agent = get_rag_agent()
-        
-        # Build prompt for Qwen
-        prompt = f"""<|im_start|>system
-You are a helpful assistant. Use the following context from a video transcript to answer the user's question accurately. If the context doesn't contain enough information, say so.
-Context:
-{context}<|im_end|>
-<|im_start|>user
-{request.query}<|im_end|>
-<|im_start|>assistant
-"""
-        
-        # Generate answer using the generator
-        # Note: This is a simplified version. For production, you'd want to properly
-        # configure the generation parameters
+        # The workflow will:
+        # 1. Retrieve top 5 chunks from Pinecone (or 15 if reranking)
+        # 2. Rerank with Cohere (if enabled)
+        # 3. Generate answer from top 5 reranked chunks
         try:
-            result = rag_agent.generator(
-                prompt,
-                max_new_tokens=256,
-                temperature=0.7,
-                do_sample=True,
-                return_full_text=False
+            answer = transcript_rag.query_transcript(
+                transcript_id=request.video_id,
+                query=request.query,
+                use_reranker=True
             )
-            answer = result[0]['generated_text'].strip()
+            
+            # Extract answer text if it's a message object
+            if hasattr(answer, 'content'):
+                answer = answer.content
+            elif isinstance(answer, str):
+                answer = answer
+            else:
+                answer = str(answer)
+            
+            answer = answer.strip()
+            context_used = 5  # Top 5 chunks are used after reranking
+            
+            # Fallback if no answer returned
+            if not answer:
+                answer = "I couldn't generate an answer from the transcript. Please try rephrasing your question."
         except Exception as e:
             # Fallback if generation fails
-            print(f"Generation error: {e}")
-            answer = f"Based on the video transcript, here's what I found:\n\n{context[:500]}..."
+            error_msg = str(e)
+            print(f"Generation error: {error_msg}")
+            print(traceback.format_exc())
+            answer = f"Error processing query: {error_msg}"
+            context_used = 0
         
-        return {"answer": answer, "context_used": len(relevant_chunks)}
+        return {"answer": answer, "context_used": context_used}
     except HTTPException:
         raise
     except Exception as e:

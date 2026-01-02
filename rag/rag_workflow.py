@@ -1,309 +1,241 @@
-"""
-Agentic RAG Workflow
-- Hugging Face Inference API (STREAMING)
-- Qwen3 Embeddings (local)
-- Cohere Reranker (high-quality retrieval)
-"""
-
-import re
-import numpy as np
-import faiss
-from typing import TypedDict, List, Literal, Dict
-
-from sentence_transformers import SentenceTransformer
-from huggingface_hub import InferenceClient
-from langgraph.graph import StateGraph, END
-import cohere
-import dotenv
 import os
-# =============================================================================
-# 🔐 CONFIGURATION (ONLY CHANGE THESE)
-# =============================================================================
-dotenv.load_dotenv()
+import time
+import re
+import logging
+import numpy as np
+import cohere
+from typing import Literal
 
-HF_TOKEN = os.getenv("HF_TOKEN")
-COHERE_API_KEY = os.getenv("COHERE_API_KEY")
+from dotenv import load_dotenv
+from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain_community.embeddings.ollama import OllamaEmbeddings
+from langchain_community.chat_models.ollama import ChatOllama
+from langchain_pinecone import PineconeVectorStore
+from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.documents import Document
 
-GENERATION_MODEL = "Qwen/Qwen2.5-7B-Instruct"
-EMBEDDING_MODEL = "Qwen/Qwen3-Embedding-0.6B"
-RERANK_MODEL = "rerank-english-v3.0"
+from pinecone import Pinecone, ServerlessSpec
 
-# =============================================================================
-# 🚀 INITIALIZATION (ONCE)
-# =============================================================================
+# Setup logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+LOG = logging.getLogger(__name__)
 
-hf_client = InferenceClient(
-    model=GENERATION_MODEL,
-    token=HF_TOKEN,
-    timeout=120
-)
+load_dotenv()
 
-embedding_model = SentenceTransformer(
-    EMBEDDING_MODEL,
-    trust_remote_code=True
-)
+class TranscriptRAG:
+    def __init__(self):
+        # Configuration
+        self.pinecone_api_key = os.getenv("PINECONE_API_KEY")
+        self.ollama_base_url = os.getenv("OLLAMA_BASE_URL")
+        self.ollama_api_key = os.getenv("OLLAMA_API_KEY")  # Optional, can be None
+        self.cohere_api_key = os.getenv("COHERE_API_KEY")  # Added Cohere Key
+        
+        # Validate required environment variables
+        if not self.pinecone_api_key:
+            raise ValueError("PINECONE_API_KEY environment variable is required")
+        if not self.ollama_base_url:
+            raise ValueError("OLLAMA_BASE_URL environment variable is required")
+        
+        # Setup headers for Ollama
+        self.request_headers = {}
+        if self.ollama_api_key:
+            self.request_headers["Authorization"] = f"Bearer {self.ollama_api_key}"
 
-cohere_client = cohere.Client(COHERE_API_KEY)
+        # Initialize Models first (needed for PineconeVectorStore)
+        # Using nomic-embed-text as it's a reliable embedding model (768 dimensions)
+        # Alternative: "all-minilm" (384 dims), "mxbai-embed-large" (1024 dims)
+        self.embed_model = OllamaEmbeddings(
+            model="nomic-embed-text", 
+            base_url=self.ollama_base_url,
+            headers=self.request_headers
+        )
+        
+        # Initialize Clients
+        # Pinecone client for index management
+        self.pinecone_client = Pinecone(api_key=self.pinecone_api_key)
+        # Note: PineconeVectorStore instances are created on-demand with specific index names
+        
+        # Initialize Cohere for Reranking
+        if self.cohere_api_key:
+            self.cohere_client = cohere.Client(self.cohere_api_key)
+        else:
+            LOG.warning("COHERE_API_KEY not found. Reranking will be disabled.")
+            self.cohere_client = None
+        self.llm = ChatOllama(
+            model="kimi-k2-thinking:cloud", 
+            base_url=self.ollama_base_url, 
+            headers=self.request_headers
+        )
 
-# =============================================================================
-# 🧠 RAG STATE
-# =============================================================================
+    def _sanitize_index_name(self, name: str) -> str:
+        return "".join(c if c.isalnum() else "-" for c in name).lower().strip("-")
 
-class RAGState(TypedDict):
-    transcript_text: str
-    clean_sentences: List[str]
-    query: str
-    chunking_strategy: Literal["semantic", "recursive", "sentence"]
-    chunks: List[str]
-    context: str
-    answer: str
-    error: str
-
-# =============================================================================
-# 🧩 GRAPH NODES
-# =============================================================================
-
-class AgenticRAG:
-
-    def clean_transcript_node(state: RAGState) -> Dict:
-        text = re.sub(r"\[\d{2}:\d{2}\]", "", state["transcript_text"])
+    def _clean_transcript(self, text: str) -> list[str]:
+        """
+        Removes timestamps and splits into clean sentences.
+        Ported from Agentic Workflow.
+        """
+        # Remove timestamps like [00:00]
+        text = re.sub(r"\[\d{2}:\d{2}\]", "", text)
+        # Split into sentences
         sentences = [
             s.strip()
             for s in re.split(r"(?<=[.!?])\s+", text)
             if len(s.strip()) > 5
         ]
-        return {"clean_sentences": sentences}
+        return sentences
 
-
-    def analyzer_agent_node(state: RAGState) -> Dict:
+    def _semantic_chunking(self, sentences: list[str], threshold: float = 0.7) -> list[str]:
         """
-        AI Agent that analyzes transcript content to decide the best chunking strategy.
-        Uses Qwen model to intelligently analyze the transcript characteristics.
+        Groups sentences based on semantic similarity.
+        Mimics 'semantic_chunking_node' from workflow using existing Ollama embeddings.
         """
-        sentences = state["clean_sentences"]
+        LOG.info("Performing Semantic Chunking...")
+        # Get embeddings for all sentences at once
+        embeddings = self.embed_model.embed_documents(sentences)
         
-        if not sentences:
-            # Default to recursive if no sentences
-            return {"chunking_strategy": "recursive"}
-        
-        # Prepare transcript sample for analysis (use first 2000 chars to avoid token limits)
-        transcript_sample = " ".join(sentences[:50])  # First 50 sentences or less
-        if len(transcript_sample) > 2000:
-            transcript_sample = transcript_sample[:2000] + "..."
-        
-        # Calculate basic statistics for context
-        total_chars = sum(len(s) for s in sentences)
-        avg_sentence_len = total_chars / len(sentences)
-        num_sentences = len(sentences)
-        
-        # Create prompt for AI agent to analyze and decide
-        analysis_prompt = f"""You are an expert at analyzing text content to determine the best chunking strategy for RAG (Retrieval Augmented Generation).
-
-        Analyze the following transcript sample and decide which chunking strategy would work best:
-
-        TRANSCRIPT SAMPLE:
-        {transcript_sample}
-
-        STATISTICS:
-        - Total sentences: {num_sentences}
-        - Average sentence length: {avg_sentence_len:.1f} characters
-        - Total characters: {total_chars}
-
-        CHUNKING STRATEGIES:
-        1. "semantic" - Best for: Technical content, complex topics, content with clear topic shifts, long-form educational material
-        2. "recursive" - Best for: Narrative content, conversational transcripts, balanced content, standard presentations
-        3. "sentence" - Best for: Short transcripts, simple content, Q&A formats, brief explanations
-
-        Consider:
-        - Content complexity and technical depth
-        - Whether topics shift frequently (needs semantic)
-        - Whether it's narrative/conversational (needs recursive)
-        - Overall length and structure
-
-        Respond with ONLY one word: "semantic", "recursive", or "sentence"
-        Do not include any explanation, just the strategy name."""
-
-        try:
-            # Use AI agent to make decision
-            response = hf_client.text_generation(
-                analysis_prompt,
-                max_new_tokens=15,  # Small buffer for the strategy name
-                temperature=0.1,   # Low temperature for consistent decisions
-                top_p=0.9
-            )
-            
-            # Extract strategy from response (clean and validate)
-            strategy = response.strip().lower()
-            
-            # Remove any quotes, punctuation, or extra text
-            strategy = strategy.replace('"', '').replace("'", '').replace('.', '').replace(',', '').strip()
-            
-            # Extract the first word that matches a valid strategy
-            words = strategy.split()
-            strategy = None
-            for word in words:
-                if word in ["semantic", "recursive", "sentence"]:
-                    strategy = word
-                    break
-            
-            # Validate the response is one of the expected strategies
-            if strategy not in ["semantic", "recursive", "sentence"]:
-                # Fallback logic if AI response is unexpected
-                if total_chars < 1000:
-                    strategy = "sentence"
-                elif avg_sentence_len > 120 or num_sentences > 100:
-                    strategy = "semantic"
-                else:
-                    strategy = "recursive"
-            
-            return {"chunking_strategy": strategy}
-            
-        except Exception as e:
-            # Fallback to heuristic-based decision if AI call fails
-            print(f"AI agent error, using fallback: {e}")
-            if total_chars < 1000:
-                strategy = "sentence"
-            elif avg_sentence_len > 120:
-                strategy = "semantic"
-            else:
-                strategy = "recursive"
-            
-            return {"chunking_strategy": strategy}
-
-
-    def semantic_chunking_node(state: RAGState) -> Dict:
-        sentences = state["clean_sentences"]
-        embeddings = embedding_model.encode(sentences)
-
         chunks = []
-        current = [sentences[0]]
+        current_chunk = [sentences[0]]
+        current_emb = embeddings[0]
 
         for i in range(1, len(sentences)):
-            sim = np.dot(embeddings[i], embeddings[i - 1]) / (
-                np.linalg.norm(embeddings[i]) * np.linalg.norm(embeddings[i - 1])
+            sim = np.dot(embeddings[i], embeddings[i-1]) / (
+                np.linalg.norm(embeddings[i]) * np.linalg.norm(embeddings[i-1])
             )
-            if sim < 0.7:
-                chunks.append(" ".join(current))
-                current = []
-            current.append(sentences[i])
+            
+            if sim < threshold:
+                chunks.append(" ".join(current_chunk))
+                current_chunk = []
+            
+            current_chunk.append(sentences[i])
 
-        if current:
-            chunks.append(" ".join(current))
+        if current_chunk:
+            chunks.append(" ".join(current_chunk))
+            
+        return chunks
 
-        return {"chunks": chunks}
+    def create_transcript_index(self, transcript_id: str):
+        """Creates a dedicated Pinecone index."""
+        index_name = self._sanitize_index_name(f"transcript-{transcript_id}")
+        existing_indexes = [i.name for i in self.pinecone_client.list_indexes()]
+        
+        if index_name not in existing_indexes:            
+            LOG.info(f"Creating new index: {index_name}")
+            try:
+                self.pinecone_client.create_index(
+                    name=index_name,
+                    dimension=768, # nomic-embed-text dimension (change if using different embedding model)
+                    metric="cosine",
+                    spec=ServerlessSpec(cloud="aws", region="us-east-1") 
+                )
+                # Wait for index to be ready (simple approach - wait and verify)
+                max_wait = 60  # Maximum 60 seconds
+                waited = 0
+                while waited < max_wait:
+                    try:
+                        # Try to get the index - if it works, it's ready
+                        index = self.pinecone_client.Index(index_name)
+                        # Try a simple operation to verify it's ready
+                        index.describe_index_stats()
+                        LOG.info(f"Index {index_name} is ready")
+                        break
+                    except Exception:
+                        time.sleep(2)
+                        waited += 2
+                if waited >= max_wait:
+                    LOG.warning(f"Index {index_name} may not be ready yet, but proceeding...")
+            except Exception as e:
+                LOG.error(f"Failed to create index: {e}")
+                raise
+        return index_name
 
+    def ingest_transcript(self, 
+                         transcript_text: str, 
+                         transcript_id: str, 
+                         strategy: Literal["recursive", "semantic"] = "recursive"):
+        """
+        Ingests transcript with selectable strategy (Default: Recursive).
+        """
+        
+        index_name = self._sanitize_index_name(f"transcript-{transcript_id}")
 
-    def recursive_chunking_node(state: RAGState) -> Dict:
-        chunks, buf = [], ""
-        for s in state["clean_sentences"]:
-            if len(buf) + len(s) < 800:
-                buf += " " + s
-            else:
-                chunks.append(buf.strip())
-                buf = s
-        if buf:
-            chunks.append(buf.strip())
-        return {"chunks": chunks}
+        # 1. Clean Text
+        sentences = self._clean_transcript(transcript_text)
+        cleaned_text = " ".join(sentences)
+        
+        chunks = []
+        if strategy == "semantic":
+            # Use the new semantic chunker
+            chunk_texts = self._semantic_chunking(sentences)
+            chunks = [Document(page_content=t, metadata={"source": transcript_id}) for t in chunk_texts]
+        else:
+            # Fallback to standard recursive
+            text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
+            chunks = text_splitter.create_documents([cleaned_text], metadatas=[{"source": transcript_id}])
 
+        LOG.info(f"Generated {len(chunks)} chunks using '{strategy}' strategy. Printing them below: ")
 
-    def sentence_chunking_node(state: RAGState) -> Dict:
-        s = state["clean_sentences"]
-        return {"chunks": [" ".join(s[i:i + 3]) for i in range(0, len(s), 3)]}
+        for chunk in chunks:
+            LOG.info(chunk)
 
-
-    def rag_retrieval_node(state: RAGState) -> Dict:
-        chunks = state["chunks"]
-        query = state["query"]
-
-        # --- FAISS retrieval (top 10) ---
-        chunk_embeddings = embedding_model.encode(chunks)
-        dim = chunk_embeddings.shape[1]
-
-        index = faiss.IndexFlatL2(dim)
-        index.add(chunk_embeddings.astype("float32"))
-
-        query_vec = embedding_model.encode([query])
-        _, idx = index.search(query_vec.astype("float32"), k=min(10, len(chunks)))
-
-        candidate_chunks = [chunks[i] for i in idx[0]]
-
-        # --- Cohere reranking (top 3) ---
-        rerank = cohere_client.rerank(
-            model=RERANK_MODEL,
-            query=query,
-            documents=candidate_chunks,
-            top_n=3
+        # 2. Upsert documents to Pinecone
+        # Create vectorstore with the specific index and add documents
+        vectorstore = PineconeVectorStore(
+            embedding=self.embed_model,
+            index_name=index_name,
+            pinecone_api_key=self.pinecone_api_key
         )
+        vectorstore.add_documents(documents=chunks)
 
-        context = "\n\n".join([candidate_chunks[r.index] for r in rerank.results])
-        return {"context": context}
+    def query_transcript(self, transcript_id: str, query: str, use_reranker: bool = True) -> str:
+        """
+        Performs RAG with optional Cohere Reranking.
+        """
+        
+        index_name = self._sanitize_index_name(f"transcript-{transcript_id}")
+        
+        vectorstore = PineconeVectorStore.from_existing_index(
+            index_name=index_name,
+            embedding=self.embed_model
+        )
+        
+        # 1. Retrieve more candidates initially if reranking
+        top_k = 15 if use_reranker and self.cohere_client else 5
+        retriever = vectorstore.as_retriever(search_kwargs={"k": top_k})
+        docs = retriever.invoke(query)
+        
+        # 2. Apply Cohere Reranking
+        final_context = ""
+        if use_reranker and self.cohere_client:
+            LOG.info("Reranking retrieved documents...")
+            doc_texts = [d.page_content for d in docs]
+            results = self.cohere_client.rerank(
+                model="rerank-english-v3.0",
+                query=query,
+                documents=doc_texts,
+                top_n=5
+            )
+            # Reconstruct context from top reranked results
+            final_context = "\n\n".join([doc_texts[r.index] for r in results.results])
+        else:
+            final_context = "\n\n".join([d.page_content for d in docs[:5]])
 
-
-    def generation_node(state: RAGState) -> Dict:
-        prompt = f"""
-    You are a helpful assistant.
-    Answer the question using ONLY the context below.
-    If the answer is not in the context, say so clearly.
-
-    Context:
-    {state['context']}
-
-    Question:
-    {state['query']}
-    """
-
-        try:
-            streamed_text = []
-            for token in hf_client.text_generation(
-                prompt,
-                max_new_tokens=350,
-                temperature=0.2,
-                top_p=0.9,
-                repetition_penalty=1.05,
-                stream=True
-            ):
-                streamed_text.append(token)
-
-            return {"answer": "".join(streamed_text).strip()}
-
-        except Exception as e:
-            return {"error": str(e)}
-
-    # =============================================================================
-    # 🧠 GRAPH CONSTRUCTION
-    # =============================================================================
-
-    def router(state: RAGState):
-        return state["chunking_strategy"]
-
-
-    workflow = StateGraph(RAGState)
-
-    workflow.add_node("clean", clean_transcript_node)
-    workflow.add_node("analyze", analyzer_agent_node)
-    workflow.add_node("semantic", semantic_chunking_node)
-    workflow.add_node("recursive", recursive_chunking_node)
-    workflow.add_node("sentence", sentence_chunking_node)
-    workflow.add_node("retrieve", rag_retrieval_node)
-    workflow.add_node("generate", generation_node)
-
-    workflow.set_entry_point("clean")
-    workflow.add_edge("clean", "analyze")
-
-    workflow.add_conditional_edges(
-        "analyze",
-        router,
-        {
-            "semantic": "semantic",
-            "recursive": "recursive",
-            "sentence": "sentence",
-        }
-    )
-
-    workflow.add_edge("semantic", "retrieve")
-    workflow.add_edge("recursive", "retrieve")
-    workflow.add_edge("sentence", "retrieve")
-    workflow.add_edge("retrieve", "generate")
-    workflow.add_edge("generate", END)
-
-    app = workflow.compile()
+        # 3. Generate Answer
+        prompt = ChatPromptTemplate.from_template("""
+            Answer based ONLY on the context below:
+            <context>
+            {context}
+            </context>
+            Question: {input}
+        """)
+        
+        chain = prompt | self.llm
+        response = chain.invoke({"input": query, "context": final_context})
+        
+        # Extract content from response (handles AIMessage objects)
+        if hasattr(response, 'content'):
+            return response.content
+        elif isinstance(response, str):
+            return response
+        else:
+            return str(response)
