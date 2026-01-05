@@ -187,12 +187,21 @@ class TranscriptRAG:
         )
         vectorstore.add_documents(documents=chunks)
 
-    def query_transcript(self, transcript_id: str, query: str, use_reranker: bool = True) -> str:
+    def query_transcript(self, transcript_id: str, query: str, use_reranker: bool = True, stream: bool = False) -> str:
         """
         Performs RAG with optional Cohere Reranking.
         """
         
         index_name = self._sanitize_index_name(f"transcript-{transcript_id}")
+
+        # Check if it exists; if not, create it
+        if index_name not in [idx.name for idx in self.pinecone_client.list_indexes()]:
+            self.pinecone_client.create_index(
+                name=index_name,
+                dimension=768, 
+                metric="cosine",
+                spec=ServerlessSpec(cloud="aws", region="us-east-1")
+            )
         
         vectorstore = PineconeVectorStore.from_existing_index(
             index_name=index_name,
@@ -230,7 +239,8 @@ class TranscriptRAG:
         """)
         
         chain = prompt | self.llm
-        response = chain.invoke({"input": query, "context": final_context})
+        
+        """response = chain.invoke({"input": query, "context": final_context})
         
         # Extract content from response (handles AIMessage objects)
         if hasattr(response, 'content'):
@@ -238,4 +248,27 @@ class TranscriptRAG:
         elif isinstance(response, str):
             return response
         else:
-            return str(response)
+            return str(response)"""
+
+        input_data = {"input": query, "context": final_context}
+
+        if stream:
+            # Define a generator function to yield text chunks
+            def generate():
+                for chunk in chain.stream(input_data):
+                    # LangChain chunks usually have a .content attribute
+                    if hasattr(chunk, 'content'):
+                        yield chunk.content
+                    else:
+                        yield str(chunk)
+            
+            return generate()  # Returns the generator object
+        else:
+            # Standard non-streaming behavior
+            response = chain.invoke(input_data)
+            if hasattr(response, 'content'):
+                return response.content
+            elif isinstance(response, str):
+                return response
+            else:
+                return str(response)

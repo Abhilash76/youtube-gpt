@@ -1,4 +1,5 @@
 from fastapi import FastAPI, HTTPException
+from fastapi.responses import StreamingResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import sys
@@ -277,35 +278,35 @@ async def chat_with_video(request: ChatRequest):
         # 2. Rerank with Cohere (if enabled)
         # 3. Generate answer from top 5 reranked chunks
         try:
-            answer = transcript_rag.query_transcript(
+            # 1. Get the generator from your RAG service
+            # We assume query_transcript now yields text chunks
+            answer_generator = transcript_rag.query_transcript(
                 transcript_id=request.video_id,
                 query=request.query,
-                use_reranker=True
+                use_reranker=True,
+                stream=True
             )
-            
-            # Extract answer text if it's a message object
-            if hasattr(answer, 'content'):
-                answer = answer.content
-            elif isinstance(answer, str):
-                answer = answer
-            else:
-                answer = str(answer)
-            
-            answer = answer.strip()
-            context_used = 5  # Top 5 chunks are used after reranking
-            
-            # Fallback if no answer returned
-            if not answer:
-                answer = "I couldn't generate an answer from the transcript. Please try rephrasing your question."
+
+            # 2. Return the StreamingResponse immediately
+            # media_type "text/event-stream" is standard for LLM streaming
+            return StreamingResponse(
+                answer_generator, 
+                media_type="text/event-stream",
+                headers={
+                    "X-Context-Used": "5",  # Send metadata in headers
+                    "Cache-Control": "no-cache"
+                }
+            )
+
         except Exception as e:
-            # Fallback if generation fails
             error_msg = str(e)
             print(f"Generation error: {error_msg}")
             print(traceback.format_exc())
-            answer = f"Error processing query: {error_msg}"
-            context_used = 0
+            # For streaming, you might want to return a JSON error 
+            # or a stream that contains the error message
+            raise HTTPException(status_code=500, detail=f"Error processing query: {error_msg}")
         
-        return {"answer": answer, "context_used": context_used}
+        #return {"answer": answer, "context_used": context_used}
     except HTTPException:
         raise
     except Exception as e:
