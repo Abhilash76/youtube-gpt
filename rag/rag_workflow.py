@@ -92,7 +92,18 @@ class TranscriptRAG:
         """
         LOG.info("Performing Semantic Chunking...")
         # Get embeddings for all sentences at once
-        embeddings = self.embed_model.embed_documents(sentences)
+        # Get embeddings for all sentences (batched to avoid context limits)
+        embeddings = []
+        batch_size = 20  # Process 20 sentences at a time
+        for i in range(0, len(sentences), batch_size):
+            batch = sentences[i:i + batch_size]
+            try:
+                batch_embeddings = self.embed_model.embed_documents(batch)
+                embeddings.extend(batch_embeddings)
+            except Exception as e:
+                LOG.error(f"Error embedding batch {i//batch_size}: {e}")
+                # Fallback: try one by one or skip? For now, re-raise to fail fast
+                raise e
         
         chunks = []
         current_chunk = [sentences[0]]
@@ -212,6 +223,15 @@ class TranscriptRAG:
         top_k = 15 if use_reranker and self.cohere_client else 5
         retriever = vectorstore.as_retriever(search_kwargs={"k": top_k})
         docs = retriever.invoke(query)
+        
+        if not docs:
+            LOG.warning("No documents retrieved from Pinecone.")
+            # Return a generator that yields the default message if streaming
+            if stream:
+                def empty_gen():
+                    yield "I couldn't find any relevant information in the transcript to answer your question."
+                return empty_gen()
+            return "I couldn't find any relevant information in the transcript to answer your question."
         
         # 2. Apply Cohere Reranking
         final_context = ""

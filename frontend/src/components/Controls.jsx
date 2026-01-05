@@ -1,6 +1,6 @@
 import React from 'react';
 
-const Controls = ({ onSummarize, onGenerateMCQ, onChatWithVideo, loading, hasTranscript }) => {
+const Controls = ({ onSummarize, onGenerateMCQ, onChatWithVideo, loading, hasTranscript, isChunking }) => {
     return (
         <div className="controls">
             {hasTranscript && (
@@ -11,8 +11,13 @@ const Controls = ({ onSummarize, onGenerateMCQ, onChatWithVideo, loading, hasTra
                     <button onClick={onGenerateMCQ} disabled={loading} className="control-button secondary">
                         {loading ? 'Processing...' : 'Generate Quiz'}
                     </button>
-                    <button onClick={onChatWithVideo} disabled={loading} className="control-button secondary">
-                        {loading ? 'Processing...' : 'Chat with Video'}
+                    <button
+                        onClick={onChatWithVideo}
+                        disabled={loading || isChunking}
+                        className="control-button secondary"
+                        title={isChunking ? "Processing video for chat..." : "Chat with Video"}
+                    >
+                        {loading ? 'Processing...' : (isChunking ? 'Preparing Chat...' : 'Chat with Video')}
                     </button>
                 </>
             )}

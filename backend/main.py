@@ -162,6 +162,10 @@ async def search_videos(request: SearchRequest):
         print(traceback.format_exc())
         raise HTTPException(status_code=500, detail=f"Search failed: {error_msg}")
 
+class IngestRequest(BaseModel):
+    video_id: str
+    transcript_text: str
+
 @app.post("/transcript")
 async def get_transcript(request: TranscriptRequest):
     try:
@@ -176,22 +180,24 @@ async def get_transcript(request: TranscriptRequest):
         # Store transcript in cache for Pinecone workflow
         transcript_cache[video_id] = transcript_text
         
-        # Create Pinecone index and ingest transcript
-        if transcript_rag is None:
-            print("ERROR: TranscriptRAG not initialized. Check environment variables and Ollama connection.")
-        else:
-            try:
-                transcript_rag.create_transcript_index(video_id)
-                transcript_rag.ingest_transcript(transcript_text, video_id, strategy="semantic")
-            except Exception as e:
-                # Log error but don't fail the transcript request
-                print(f"Warning: Failed to create Pinecone index or ingest transcript: {e}")
-                print(traceback.format_exc())
-        
-        # Note: FAISS index creation removed - using Pinecone only
-        
         return {"transcript": transcript_text, "video_id": video_id}
     except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/ingest")
+async def ingest_transcript(request: IngestRequest):
+    try:
+        # Create Pinecone index and ingest transcript
+        if transcript_rag is None:
+            raise HTTPException(status_code=503, detail="TranscriptRAG not initialized")
+            
+        transcript_rag.create_transcript_index(request.video_id)
+        transcript_rag.ingest_transcript(request.transcript_text, request.video_id, strategy="semantic")
+        
+        return {"status": "success", "message": "Ingestion complete"}
+    except Exception as e:
+        print(f"Ingestion error: {e}")
+        print(traceback.format_exc())
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/summarize")

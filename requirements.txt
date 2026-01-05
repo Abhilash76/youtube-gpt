@@ -17,11 +17,13 @@ bitsandbytes
 huggingface-hub
 pinecone-client
 cohere
+groq
 
 # LangChain
 langchain
 langchain-community
 langchain-pinecone
+langchain-text-splitters
 langgraph
 
 # API / UI

@@ -1,5 +1,33 @@
 import streamlit as st
 from get_transcripts import gettranscripts
+import httpx
+from youtubesearchpython.core.requests import RequestCore
+from youtubesearchpython.core.constants import userAgent
+
+# Monkey patch to fix httpx compatibility issue with youtube-search-python
+def patch_youtube_search_httpx():
+    def fixed_sync_post(self):
+        if self.proxy:
+            with httpx.Client(proxies=self.proxy) as client:
+                return client.post(self.url, headers={"User-Agent": userAgent}, json=self.data, timeout=self.timeout)
+        else:
+            return httpx.post(self.url, headers={"User-Agent": userAgent}, json=self.data, timeout=self.timeout)
+    
+    def fixed_sync_get(self):
+        if self.proxy:
+            with httpx.Client(proxies=self.proxy) as client:
+                return client.get(self.url, headers={"User-Agent": userAgent}, timeout=self.timeout, cookies={'CONSENT': 'YES+1'})
+        else:
+            return httpx.get(self.url, headers={"User-Agent": userAgent}, timeout=self.timeout, cookies={'CONSENT': 'YES+1'})
+    
+    RequestCore.syncPostRequest = fixed_sync_post
+    RequestCore.syncGetRequest = fixed_sync_get
+
+try:
+    patch_youtube_search_httpx()
+except Exception as e:
+    print(f"Warning: Could not patch youtube-search-python: {e}")
+
 from youtubesearchpython import VideosSearch
 from generate_summary import Summarize
 

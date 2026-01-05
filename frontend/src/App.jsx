@@ -23,6 +23,7 @@ function App() {
   const [showTranscript, setShowTranscript] = useState(false);
   const [showChat, setShowChat] = useState(false);
   const [videoId, setVideoId] = useState(null);
+  const [isChunking, setIsChunking] = useState(false);
 
   const handleSearch = async (query) => {
     setLoading(true);
@@ -34,6 +35,7 @@ function App() {
     setSummary('');
     setMcqs([]);
     setGradingResults(null);
+    setIsChunking(false);
 
     try {
       const response = await api.post('/search', { query });
@@ -56,6 +58,7 @@ function App() {
     setShowChat(false);
     setVideoId(null);
     setLlmError('');
+    setIsChunking(false);
     // Scroll to player
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -69,16 +72,35 @@ function App() {
       setLlmError('');
 
       try {
+        // 1. Get Transcript (Fast)
         const response = await api.post('/transcript', {
           video_url: selectedVideo.link,
           title: selectedVideo.title
         });
-        setTranscript(response.data.transcript);
-        setVideoId(response.data.video_id || selectedVideo.id);
+
+        const transcriptText = response.data.transcript;
+        const vId = response.data.video_id || selectedVideo.id;
+
+        setTranscript(transcriptText);
+        setVideoId(vId);
         setShowTranscript(false);
+        setLoading(false); // Enable other buttons immediately
+
+        // 2. Start Ingestion/Chunking (Background-ish)
+        setIsChunking(true);
+        try {
+          await api.post('/ingest', {
+            video_id: vId,
+            transcript_text: transcriptText
+          });
+        } catch (ingestErr) {
+          console.error("Ingestion failed:", ingestErr);
+        } finally {
+          setIsChunking(false);
+        }
+
       } catch (err) {
         setError('Failed to get transcript. ' + (err.response?.data?.detail || err.message));
-      } finally {
         setLoading(false);
       }
     };
@@ -224,6 +246,7 @@ function App() {
               onChatWithVideo={handleChatWithVideo}
               loading={loading}
               hasTranscript={!!transcript}
+              isChunking={isChunking}
             />
 
             <div className="output-section">

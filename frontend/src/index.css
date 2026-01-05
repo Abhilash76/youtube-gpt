@@ -676,6 +676,7 @@ body::before {
 }
 
 .chat-message-content {
+  text-align: left;
   padding: 1rem 1.5rem;
   border-radius: 20px;
   word-wrap: break-word;
