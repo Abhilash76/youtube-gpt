@@ -1,0 +1,37 @@
+# Core
+numpy==1.26.4
+pandas==2.1.4
+scipy
+requests
+python-dotenv
+
+# ML / RAG
+torch==2.2.2
+torchvision==0.17.2
+torchaudio==2.2.2
+transformers>=4.40.0
+sentence-transformers
+faiss-cpu
+accelerate
+bitsandbytes
+huggingface-hub
+pinecone-client
+cohere
+groq
+
+# LangChain
+langchain
+langchain-community
+langchain-pinecone
+langchain-text-splitters
+langgraph
+
+# API / UI
+fastapi
+uvicorn
+streamlit
+
+# Utilities
+gitpython
+youtube-search-python
+youtube-transcript-api
