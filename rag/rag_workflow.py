@@ -7,7 +7,7 @@ import cohere
 from typing import Literal
 
 from dotenv import load_dotenv
-from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain_text_splitters.character import RecursiveCharacterTextSplitter
 from langchain_community.embeddings.ollama import OllamaEmbeddings
 from langchain_community.chat_models.ollama import ChatOllama
 from langchain_pinecone import PineconeVectorStore
@@ -29,6 +29,12 @@ class TranscriptRAG:
         self.ollama_base_url = os.getenv("OLLAMA_BASE_URL")
         self.ollama_api_key = os.getenv("OLLAMA_API_KEY")  # Optional, can be None
         self.cohere_api_key = os.getenv("COHERE_API_KEY")  # Added Cohere Key
+        
+        # 2. Handle OLLAMA_BASE_URL dynamically
+        # Default to host.docker.internal if not provided, which works with the new docker-compose
+        self.ollama_base_url = os.getenv("OLLAMA_BASE_URL", "http://host.docker.internal:11434")
+        
+        LOG.info(f"Connecting to Ollama at: {self.ollama_base_url}")
         
         # Validate required environment variables
         if not self.pinecone_api_key:

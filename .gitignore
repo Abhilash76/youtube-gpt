@@ -3,6 +3,11 @@
 \youtube-gpt
 \frontend\node_modules
 \frontend\build
+\frontend\.vite
+\frontend\public
+\frontend\README.md
+\frontend\
 __pycache__
 *.pkl
 *.index
+*.crdownload
