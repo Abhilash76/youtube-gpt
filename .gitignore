@@ -11,4 +11,4 @@ __pycache__
 *.pkl
 *.index
 *.crdownload
-\.idea
+.idea

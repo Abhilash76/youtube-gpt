@@ -1,2 +1,3 @@
 # youtube-gpt
-This repository leverages open source LLMs to interact with a youtube video.
+An open-source clone of Google's NotebookLM that leverages open source LLMs to interact with a youtube video.
+
