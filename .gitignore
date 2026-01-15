@@ -8,7 +8,11 @@
 \frontend\README.md
 \frontend\
 __pycache__
+.pytest_cache
+src/__pycache__
+tests/__pycache__
 *.pkl
 *.index
 *.crdownload
 .idea
+*.png

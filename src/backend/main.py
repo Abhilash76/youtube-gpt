@@ -2,6 +2,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.responses import StreamingResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
+from prometheus_fastapi_instrumentator import Instrumentator
 import sys
 import os
 import asyncio
@@ -84,6 +85,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Instrument FastAPI with Prometheus
+Instrumentator().instrument(app).expose(app)
 
 # Initialize TranscriptRAG for Pinecone workflow
 try:
@@ -192,7 +196,7 @@ async def ingest_transcript(request: IngestRequest):
             raise HTTPException(status_code=503, detail="TranscriptRAG not initialized")
             
         transcript_rag.create_transcript_index(request.video_id)
-        transcript_rag.ingest_transcript(request.transcript_text, request.video_id, strategy="semantic")
+        transcript_rag.ingest_transcript(request.transcript_text, request.video_id, strategy="agentic")
         
         return {"status": "success", "message": "Ingestion complete"}
     except Exception as e:

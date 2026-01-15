@@ -29,9 +29,15 @@ langgraph
 # API / UI
 fastapi
 uvicorn
+prometheus-fastapi-instrumentator
 streamlit
 
 # Utilities
 gitpython
 youtube-search-python
 youtube-transcript-api
+httpx
+
+# Testing
+pytest
+pytest-mock

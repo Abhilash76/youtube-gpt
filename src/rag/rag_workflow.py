@@ -51,7 +51,7 @@ class TranscriptRAG:
         # Using nomic-embed-text as it's a reliable embedding model (768 dimensions)
         # Alternative: "all-minilm" (384 dims), "mxbai-embed-large" (1024 dims)
         self.embed_model = OllamaEmbeddings(
-            model="nomic-embed-text", 
+            model="hf.co/mradermacher/embeddinggemma-300m-GGUF:Q8_0", 
             base_url=self.ollama_base_url,
             headers=self.request_headers
         )
@@ -78,12 +78,9 @@ class TranscriptRAG:
 
     def _clean_transcript(self, text: str) -> list[str]:
         """
-        Removes timestamps and splits into clean sentences.
-        Ported from Agentic Workflow.
+        Splits into clean sentences while PRESERVING timestamps.
         """
-        # Remove timestamps like [00:00]
-        text = re.sub(r"\[\d{2}:\d{2}\]", "", text)
-        # Split into sentences
+        # Split into sentences but keep the [MM:SS] markers
         sentences = [
             s.strip()
             for s in re.split(r"(?<=[.!?])\s+", text)
@@ -91,13 +88,40 @@ class TranscriptRAG:
         ]
         return sentences
 
+    def _decide_chunking_strategy(self, transcript_text: str) -> Literal["recursive", "semantic"]:
+        """
+        Uses the LLM to decide which chunking strategy to use.
+        """
+        LOG.info("Deciding chunking strategy...")
+        sample = transcript_text[:2000]  # Analyze first 2000 chars
+        
+        prompt = ChatPromptTemplate.from_template("""
+            Analyze the following transcript snippet and decide if it should be chunked using a 'recursive' or 'semantic' strategy.
+            - Use 'semantic' for structured content, tutorials, or lectures where logical flow is key.
+            - Use 'recursive' for casual conversations, interviews, or unstructured dialogue.
+            
+            Transcript sample:
+            {sample}
+            
+            Return ONLY the word 'semantic' or 'recursive'.
+        """)
+        
+        chain = prompt | self.llm
+        try:
+            decision = chain.invoke({"sample": sample}).content.strip().lower()
+            if "semantic" in decision:
+                return "semantic"
+            return "recursive"
+        except Exception as e:
+            LOG.warning(f"Failed to decide strategy agentically: {e}. Falling back to recursive.")
+            return "recursive"
+
     def _semantic_chunking(self, sentences: list[str], threshold: float = 0.7) -> list[str]:
         """
         Groups sentences based on semantic similarity.
         Mimics 'semantic_chunking_node' from workflow using existing Ollama embeddings.
         """
         LOG.info("Performing Semantic Chunking...")
-        # Get embeddings for all sentences at once
         # Get embeddings for all sentences (batched to avoid context limits)
         embeddings = []
         batch_size = 20  # Process 20 sentences at a time
@@ -112,6 +136,9 @@ class TranscriptRAG:
                 raise e
         
         chunks = []
+        if not sentences:
+            return chunks
+            
         current_chunk = [sentences[0]]
         current_emb = embeddings[0]
 
@@ -169,17 +196,22 @@ class TranscriptRAG:
     def ingest_transcript(self, 
                          transcript_text: str, 
                          transcript_id: str, 
-                         strategy: Literal["recursive", "semantic"] = "recursive"):
+                         strategy: Literal["recursive", "semantic", "agentic"] = "recursive"):
         """
         Ingests transcript with selectable strategy (Default: Recursive).
         """
         
         index_name = self._sanitize_index_name(f"transcript-{transcript_id}")
 
-        # 1. Clean Text
+        # 1. Clean Text (Preserving timestamps)
         sentences = self._clean_transcript(transcript_text)
         cleaned_text = " ".join(sentences)
         
+        # 2. Decide Strategy if Agentic
+        if strategy == "agentic":
+            strategy = self._decide_chunking_strategy(transcript_text)
+            LOG.info(f"Agentic decision: Using '{strategy}' strategy.")
+
         chunks = []
         if strategy == "semantic":
             # Use the new semantic chunker
@@ -257,25 +289,21 @@ class TranscriptRAG:
 
         # 3. Generate Answer
         prompt = ChatPromptTemplate.from_template("""
-            Answer based ONLY on the context below:
+            Answer the question based ONLY on the context below.
+            The context contains timestamps in [MM:SS] format. 
+            If the user asks about a specific time or "when" something happened, use these timestamps to provide an accurate answer.
+            
             <context>
             {context}
             </context>
+            
             Question: {input}
+            
+            Answer (be concise and reference timestamps if relevant):
         """)
         
         chain = prompt | self.llm
         
-        """response = chain.invoke({"input": query, "context": final_context})
-        
-        # Extract content from response (handles AIMessage objects)
-        if hasattr(response, 'content'):
-            return response.content
-        elif isinstance(response, str):
-            return response
-        else:
-            return str(response)"""
-
         input_data = {"input": query, "context": final_context}
 
         if stream:
