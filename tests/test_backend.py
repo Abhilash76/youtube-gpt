@@ -9,7 +9,7 @@ sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'src'))
 
 # Mock TranscriptRAG before importing app
 with patch('rag.rag_workflow.TranscriptRAG'):
-    from backend.main import app
+    from src.backend.main import app
 
 client = TestClient(app)
 

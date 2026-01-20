@@ -6,7 +6,7 @@ import os
 # Add src to path
 sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'src'))
 
-from rag.rag_workflow import TranscriptRAG
+from src.rag.rag_workflow import TranscriptRAG
 
 @pytest.fixture
 def mock_rag():

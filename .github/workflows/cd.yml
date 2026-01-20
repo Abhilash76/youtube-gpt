@@ -36,6 +36,11 @@ jobs:
       run: |
         mkdir -p $HOME/.kube
         echo "${{ secrets.KUBE_CONFIG }}" > $HOME/.kube/config
+        # Verify if the config is valid and doesn't contain local paths
+        if grep -q "C:\\\\" $HOME/.kube/config; then
+          echo "Error: KUBE_CONFIG secret contains Windows paths. Please use 'kubectl config view --flatten --minify' to generate a portable config."
+          exit 1
+        fi
 
     - name: Deploy to Kubernetes
       run: |
