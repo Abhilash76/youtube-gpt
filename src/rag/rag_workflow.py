@@ -51,7 +51,7 @@ class TranscriptRAG:
         # Using nomic-embed-text as it's a reliable embedding model (768 dimensions)
         # Alternative: "all-minilm" (384 dims), "mxbai-embed-large" (1024 dims)
         self.embed_model = OllamaEmbeddings(
-            model="hf.co/mradermacher/embeddinggemma-300m-GGUF:Q8_0", 
+            model='nomic-embed-text', 
             base_url=self.ollama_base_url,
             headers=self.request_headers
         )
