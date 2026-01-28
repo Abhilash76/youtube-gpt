@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
 
-const ChatInterface = ({ videoId, onClose }) => {
+const ChatInterface = ({ videoId, onClose, isChunking }) => {
     const [messages, setMessages] = useState([]);
     const [input, setInput] = useState('');
     const [loading, setLoading] = useState(false);
@@ -19,7 +19,7 @@ const ChatInterface = ({ videoId, onClose }) => {
 
     const handleSend = async (e) => {
         e.preventDefault();
-        if (!input.trim() || loading) return;
+        if (!input.trim() || loading || isChunking) return;
 
         const userMessage = input.trim();
         setInput('');
@@ -60,8 +60,6 @@ const ChatInterface = ({ videoId, onClose }) => {
             // Once the stream starts, we can stop the main loading spinner/dots
             setLoading(false);
 
-            
-
             while (true) {
                 const { done, value } = await reader.read();
                 if (done) break;
@@ -96,9 +94,15 @@ const ChatInterface = ({ videoId, onClose }) => {
                     ✕
                 </button>
             </div>
-            
+
             <div className="chat-messages">
-                {messages.length === 0 && (
+                {isChunking && (
+                    <div className="progress-container">
+                        <div className="progress-spinner"></div>
+                        <div className="progress-text">Video is currently being processed. It will be ready in a few moments...</div>
+                    </div>
+                )}
+                {messages.length === 0 && !isChunking && (
                     <div className="chat-welcome">
                         <p>Ask me anything about the video!</p>
                         <p className="chat-hint">Try questions like:</p>
@@ -140,7 +144,7 @@ const ChatInterface = ({ videoId, onClose }) => {
                 )}
 
                 {error && <div className="chat-error">{error}</div>}
-                
+
                 {/* Invisible element to anchor the auto-scroll */}
                 <div ref={messagesEndRef} />
             </div>
@@ -150,13 +154,13 @@ const ChatInterface = ({ videoId, onClose }) => {
                     type="text"
                     value={input}
                     onChange={(e) => setInput(e.target.value)}
-                    placeholder="Ask a question about the video..."
-                    disabled={loading}
+                    placeholder={isChunking ? "Chat will be available once processing is complete..." : "Ask a question about the video..."}
+                    disabled={loading || isChunking}
                     className="chat-input"
                 />
-                <button 
-                    type="submit" 
-                    disabled={loading || !input.trim()} 
+                <button
+                    type="submit"
+                    disabled={loading || !input.trim() || isChunking}
                     className="chat-send-button"
                 >
                     Send

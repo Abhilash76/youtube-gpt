@@ -7,6 +7,7 @@ import Controls from './components/Controls';
 import OutputDisplay from './components/OutputDisplay';
 import MCQDisplay from './components/MCQDisplay';
 import ChatInterface from './components/ChatInterface';
+import SidePanel from './components/SidePanel';
 import api from './api';
 import './App.css'; // Ensure we use the default or custom CSS
 
@@ -20,10 +21,10 @@ function App() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [llmError, setLlmError] = useState('');
-  const [showTranscript, setShowTranscript] = useState(false);
-  const [showChat, setShowChat] = useState(false);
   const [videoId, setVideoId] = useState(null);
   const [isChunking, setIsChunking] = useState(false);
+  const [activeTab, setActiveTab] = useState('transcript');
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   const handleSearch = async (query) => {
     setLoading(true);
@@ -54,11 +55,11 @@ function App() {
     setSummary('');
     setMcqs([]);
     setGradingResults(null);
-    setShowTranscript(false);
-    setShowChat(false);
     setVideoId(null);
     setLlmError('');
     setIsChunking(false);
+    setActiveTab('transcript');
+    setIsSidebarOpen(false);
     // Scroll to player
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -83,7 +84,6 @@ function App() {
 
         setTranscript(transcriptText);
         setVideoId(vId);
-        setShowTranscript(false);
         setLoading(false); // Enable other buttons immediately
 
         // 2. Start Ingestion/Chunking (Background-ish)
@@ -181,7 +181,23 @@ function App() {
       setError('Video ID not available. Please wait for transcript to be generated.');
       return;
     }
-    setShowChat(true);
+    handleTabChange('chat');
+  };
+
+  const handleTabChange = (tabId) => {
+    if (activeTab === tabId && isSidebarOpen) {
+      setIsSidebarOpen(false);
+      return;
+    }
+
+    setActiveTab(tabId);
+    setIsSidebarOpen(true);
+
+    if (tabId === 'summary' && !summary) {
+      handleSummarize();
+    } else if (tabId === 'mcqs' && mcqs.length === 0) {
+      handleGenerateMCQ();
+    }
   };
 
   return (
@@ -199,74 +215,67 @@ function App() {
         {!selectedVideo && <VideoList videos={videos} onSelect={handleSelectVideo} />}
 
         {selectedVideo && (
-          <div className="video-workspace">
-            <button className="back-button" onClick={() => setSelectedVideo(null)}>← Back to Results</button>
+          <div className="video-workspace-container">
+            <div className={`video-main-content ${isSidebarOpen ? 'sidebar-open' : ''}`}>
+              <button className="back-button" onClick={() => setSelectedVideo(null)}>← Back to Results</button>
 
-            <div className="video-section">
-              <div className="video-section-header">
-                <h2>{selectedVideo.title}</h2>
-                {transcript && !showTranscript && (
-                  <button
-                    className="control-button secondary transcript-toggle"
-                    onClick={() => setShowTranscript(true)}
-                    disabled={loading}
-                  >
-                    {loading ? 'Processing...' : 'View Transcript'}
-                  </button>
-                )}
-              </div>
+              <div className="video-section">
+                <div className="video-section-header">
+                  <h2>{selectedVideo.title}</h2>
+                </div>
 
-              <div className={`video-transcript-layout ${showTranscript && transcript ? 'with-transcript' : ''}`}>
                 <div className="video-container">
                   <VideoPlayer url={`https://www.youtube.com/watch?v=${selectedVideo.id}`} />
                 </div>
-                {showTranscript && transcript && (
-                  <div className="transcript-panel open">
-                    <div className="transcript-panel-header">
-                      <h3>Transcript</h3>
-                      <button
-                        className="close-transcript"
-                        onClick={() => setShowTranscript(false)}
-                        aria-label="Hide transcript"
-                      >
-                        Close
-                      </button>
-                    </div>
-                    <div className="transcript-panel-body">
-                      <ReactMarkdown>{transcript}</ReactMarkdown>
-                    </div>
+              </div>
+
+            </div>
+
+            <SidePanel
+              activeTab={activeTab}
+              onTabChange={handleTabChange}
+              isOpen={isSidebarOpen}
+              setIsOpen={setIsSidebarOpen}
+            >
+              {activeTab === 'transcript' && (
+                <div className="transcript-panel-body">
+                  <h3>Transcript</h3>
+                  {transcript ? (
+                    <ReactMarkdown>{transcript}</ReactMarkdown>
+                  ) : (
+                    <p>Transcript is being generated...</p>
+                  )}
+                </div>
+              )}
+              {activeTab === 'summary' && (
+                <div className="output-section">
+                  <OutputDisplay title="Summary" content={summary} />
+                </div>
+              )}
+              {activeTab === 'mcqs' && (
+                mcqs.length > 0 ? (
+                  <MCQDisplay
+                    questions={mcqs}
+                    onSubmit={handleSubmitMCQ}
+                    gradingResults={gradingResults}
+                    loading={loading}
+                  />
+                ) : (
+                  <div className="no-content">
+                    <p>{loading ? 'Generating MCQs...' : 'Click "Generate MCQs" to start the quiz.'}</p>
                   </div>
-                )}
-              </div>
-            </div>
-
-            <Controls
-              onSummarize={handleSummarize}
-              onGenerateMCQ={handleGenerateMCQ}
-              onChatWithVideo={handleChatWithVideo}
-              loading={loading}
-              hasTranscript={!!transcript}
-              isChunking={isChunking}
-            />
-
-            <div className="output-section">
-              <OutputDisplay title="Summary" content={summary} />
-            </div>
-
-            {mcqs.length > 0 && (
-              <MCQDisplay
-                questions={mcqs}
-                onSubmit={handleSubmitMCQ}
-                gradingResults={gradingResults}
-                loading={loading}
-              />
-            )}
-
-            {showChat && videoId && (
-              <div className="chat-container">
-                <ChatInterface videoId={videoId} onClose={() => setShowChat(false)} />
-              </div>
-            )}
+                )
+              )}
+              {videoId && (
+                <div style={{ display: activeTab === 'chat' ? 'block' : 'none', height: '100%' }}>
+                  <ChatInterface
+                    videoId={videoId}
+                    onClose={() => setIsSidebarOpen(false)}
+                    isChunking={isChunking}
+                  />
+                </div>
+              )}
+            </SidePanel>
           </div>
         )}
       </main>
