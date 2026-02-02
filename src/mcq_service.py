@@ -1,29 +1,10 @@
-import os
 import json
 import re
-from huggingface_hub import InferenceClient
-from dotenv import load_dotenv
-
-# Load environment variables
-load_dotenv()
-HF_TOKEN = os.getenv("HF_TOKEN")
-
-# Models suggested for high-quality RAG/MCQ workflows
-# Qwen3-8B for fast, accurate generation
-GENERATION_MODEL = "Qwen/Qwen3-8B" 
-# Prometheus is the gold-standard open-source judge model
-JUDGE_MODEL = "Qwen/Qwen2.5-7B-Instruct"
-
-# Initialize Hugging Face Inference Client (Model is specified in the call now)
-hf_client = InferenceClient(
-    token=HF_TOKEN,
-    timeout=120
-)
 
 class MCQService:
     @staticmethod
-    def generate_mcqs_from_text(transcript_text: str):
-        """Generates MCQs using the Chat Completion API (Conversational Task)"""
+    def generate_mcqs_from_text(transcript_text: str, llm):
+        """Generates MCQs using the provided LLM instance."""
         system_prompt = "You are an expert teacher. Create 5 multiple choice questions (MCQs) based on the provided transcript."
         user_prompt = f"""Return ONLY a raw JSON object.
         The JSON structure must be:
@@ -43,19 +24,15 @@ class MCQService:
         """
         
         try:
-            # Use chat_completion to satisfy the "conversational" task requirement
-            response = hf_client.chat_completion(
-                model=GENERATION_MODEL,
-                messages=[
-                    {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": user_prompt}
-                ],
-                max_tokens=1000,
-                temperature=0.5,
-                top_p=0.9
-            )
+            # Construct message for LangChain LLM
+            prompt = f"{system_prompt}\n\n{user_prompt}"
+            response = llm.invoke(prompt)
+            content = response.content.strip()
             
-            content = response.choices[0].message.content.strip()
+            # Clean thinking tags if present
+            content = re.sub(r'<thought>.*?</thought>', '', content, flags=re.DOTALL)
+            content = re.sub(r'<think>.*?</think>', '', content, flags=re.DOTALL)
+            content = content.strip()
             
             # Clean and extract JSON
             content = re.sub(r'^```json\s*', '', content, flags=re.MULTILINE)
@@ -70,7 +47,7 @@ class MCQService:
             raise e
 
     @staticmethod
-    def grade_mcq_answers(transcript_text: str, questions: list, user_answers: dict):
+    def grade_mcq_answers(transcript_text: str, questions: list, user_answers: dict, llm):
         """Implements LLM-as-a-judge with a formal grading rubric"""
         
         qa_text = ""
@@ -78,7 +55,6 @@ class MCQService:
             ua = user_answers.get(str(q['id'])) or user_answers.get(q['id'])
             qa_text += f"Q{q['id']}: {q['question']}\nOptions: {q['options']}\nUser Answer: {ua}\n\n"
 
-        # Grading Rubric as suggested for LLM-as-a-judge
         rubric = """
         ### Grading Rubric:
         1. Accuracy: Is the user's answer factually supported by the transcript?
@@ -109,18 +85,14 @@ class MCQService:
         """
 
         try:
-            response = hf_client.chat_completion(
-                model=JUDGE_MODEL, # Using specialized Judge model
-                messages=[
-                    {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": user_prompt}
-                ],
-                max_tokens=1200,
-                temperature=0.2, # Lower temperature for objective grading
-                top_p=0.9
-            )
+            prompt = f"{system_prompt}\n\n{user_prompt}"
+            response = llm.invoke(prompt)
+            content = response.content.strip()
             
-            content = response.choices[0].message.content.strip()
+            # Clean thinking tags
+            content = re.sub(r'<thought>.*?</thought>', '', content, flags=re.DOTALL)
+            content = re.sub(r'<think>.*?</think>', '', content, flags=re.DOTALL)
+            content = content.strip()
             
             # Clean and extract JSON
             content = re.sub(r'^```json\s*', '', content, flags=re.MULTILINE)
@@ -129,7 +101,7 @@ class MCQService:
             if json_match:
                 content = json_match.group(0)
             
-            # Additional cleaning: remove trailing commas before closing braces/brackets
+            # Additional cleaning
             content = re.sub(r',(\s*[}\]])', r'\1', content)
             
             return json.loads(content)

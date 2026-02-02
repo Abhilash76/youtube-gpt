@@ -1,8 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
 
-const ChatInterface = ({ videoId, onClose, isChunking }) => {
-    const [messages, setMessages] = useState([]);
+const ChatInterface = ({ videoId, onClose, isChunking, messages, setMessages }) => {
     const [input, setInput] = useState('');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
@@ -87,14 +86,7 @@ const ChatInterface = ({ videoId, onClose, isChunking }) => {
     };
 
     return (
-        <div className="chat-interface">
-            <div className="chat-header">
-                <h3>Chat with Video</h3>
-                <button className="close-chat" onClick={onClose} aria-label="Close chat">
-                    ✕
-                </button>
-            </div>
-
+        <div className="chat-content-direct">
             <div className="chat-messages">
                 {isChunking && (
                     <div className="progress-container">

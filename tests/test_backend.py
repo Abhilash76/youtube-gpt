@@ -45,3 +45,35 @@ def test_ingest_endpoint():
         response = client.post("/ingest", json={"video_id": "vid", "transcript_text": "text"})
         assert response.status_code == 200
         assert response.json()["status"] == "success"
+
+def test_generate_mcq_endpoint():
+    with patch('backend.main.transcript_rag') as mock_rag:
+        with patch('backend.main.MCQService.generate_mcqs_from_text') as mock_gen:
+            mock_gen.return_value = {"questions": []}
+            response = client.post("/generate-mcq", json={"transcript_text": "text"})
+            assert response.status_code == 200
+            assert "questions" in response.json()
+
+def test_grade_mcq_endpoint():
+    with patch('backend.main.transcript_rag') as mock_rag:
+        with patch('backend.main.MCQService.grade_mcq_answers') as mock_grade:
+            mock_grade.return_value = {"score": "5/5"}
+            response = client.post("/grade-mcq", json={
+                "transcript_text": "text",
+                "questions": [],
+                "user_answers": {}
+            })
+            assert response.status_code == 200
+            assert response.json()["score"] == "5/5"
+
+def test_recommend_endpoint():
+    with patch('backend.main.transcript_rag') as mock_rag:
+        mock_rag.llm.invoke.return_value = MagicMock(content="Query 1\nQuery 2")
+        with patch('backend.main.VideosSearch') as mock_search:
+            mock_search.return_value.result.return_value = {
+                "result": [{"title": "Rec 1", "link": "url1", "thumbnails": [{"url": "img"}], "channel": {"name": "ch"}}]
+            }
+            response = client.post("/recommend", json={"transcript_text": "text", "summary": "sum"})
+            assert response.status_code == 200
+            assert "recommendations" in response.json()
+            assert len(response.json()["recommendations"]) > 0

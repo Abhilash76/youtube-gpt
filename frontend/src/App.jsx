@@ -26,6 +26,10 @@ function App() {
   const [activeTab, setActiveTab] = useState('transcript');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
+  const [chatMessages, setChatMessages] = useState([]);
+  const [recommendations, setRecommendations] = useState([]);
+  const [loadingSummary, setLoadingSummary] = useState(false);
+
   const handleSearch = async (query) => {
     setLoading(true);
     setError('');
@@ -36,6 +40,8 @@ function App() {
     setSummary('');
     setMcqs([]);
     setGradingResults(null);
+    setChatMessages([]);
+    setRecommendations([]);
     setIsChunking(false);
 
     try {
@@ -55,6 +61,8 @@ function App() {
     setSummary('');
     setMcqs([]);
     setGradingResults(null);
+    setChatMessages([]);
+    setRecommendations([]);
     setVideoId(null);
     setLlmError('');
     setIsChunking(false);
@@ -67,7 +75,7 @@ function App() {
   useEffect(() => {
     if (!selectedVideo) return;
 
-    const fetchTranscript = async () => {
+    const fetchAllData = async () => {
       setLoading(true);
       setError('');
       setLlmError('');
@@ -84,20 +92,19 @@ function App() {
 
         setTranscript(transcriptText);
         setVideoId(vId);
-        setLoading(false); // Enable other buttons immediately
+        setLoading(false);
 
         // 2. Start Ingestion/Chunking (Background-ish)
         setIsChunking(true);
-        try {
-          await api.post('/ingest', {
-            video_id: vId,
-            transcript_text: transcriptText
-          });
-        } catch (ingestErr) {
-          console.error("Ingestion failed:", ingestErr);
-        } finally {
-          setIsChunking(false);
-        }
+        api.post('/ingest', {
+          video_id: vId,
+          transcript_text: transcriptText
+        }).catch(err => console.error("Ingestion failed:", err))
+          .finally(() => setIsChunking(false));
+
+        // 3. Auto-generate Summary and MCQs and Recommendations
+        handleSummarize(transcriptText);
+        handleGenerateMCQ(transcriptText);
 
       } catch (err) {
         setError('Failed to get transcript. ' + (err.response?.data?.detail || err.message));
@@ -105,56 +112,50 @@ function App() {
       }
     };
 
-    fetchTranscript();
+    fetchAllData();
   }, [selectedVideo]);
 
-  const handleSummarize = async () => {
-    if (!transcript) return;
-    setLoading(true);
-    setError('');
-    setLlmError('');
-
+  const handleSummarize = async (text) => {
+    const transcriptToUse = text || transcript;
+    if (!transcriptToUse) return;
+    setLoadingSummary(true);
     try {
       const response = await api.post('/summarize', {
-        transcript_text: transcript
+        transcript_text: transcriptToUse
       });
-      setSummary(response.data.summary);
+      const summaryText = response.data.summary;
+      setSummary(summaryText);
+      // Fetch recommendations after summary is ready
+      fetchRecommendations(transcriptToUse, summaryText);
     } catch (err) {
-      if (err.response?.status === 500) {
-        setLlmError('The LLM is currently not available. Please try again later.');
-        setError('');
-      } else {
-        setError('Failed to summarize. ' + (err.response?.data?.detail || err.message));
-        setLlmError('');
-      }
+      console.error("Summarize failed:", err);
     } finally {
-      setLoading(false);
+      setLoadingSummary(false);
     }
   };
 
-  const handleGenerateMCQ = async () => {
-    if (!transcript) return;
-    setLoading(true);
-    setError('');
-    setMcqs([]);
-    setGradingResults(null);
-    setLlmError('');
+  const fetchRecommendations = async (text, summ) => {
+    try {
+      const response = await api.post('/recommend', {
+        transcript_text: text,
+        summary: summ
+      });
+      setRecommendations(response.data.recommendations);
+    } catch (err) {
+      console.error("Recommendations failed:", err);
+    }
+  };
 
+  const handleGenerateMCQ = async (text) => {
+    const transcriptToUse = text || transcript;
+    if (!transcriptToUse) return;
     try {
       const response = await api.post('/generate-mcq', {
-        transcript_text: transcript
+        transcript_text: transcriptToUse
       });
       setMcqs(response.data.questions);
     } catch (err) {
-      if (err.response?.status === 500) {
-        setLlmError('The LLM is currently not available. Please try again later.');
-        setError('');
-      } else {
-        setError('Failed to generate MCQs. ' + (err.response?.data?.detail || err.message));
-        setLlmError('');
-      }
-    } finally {
-      setLoading(false);
+      console.error("MCQ generation failed:", err);
     }
   };
 
@@ -189,15 +190,8 @@ function App() {
       setIsSidebarOpen(false);
       return;
     }
-
     setActiveTab(tabId);
     setIsSidebarOpen(true);
-
-    if (tabId === 'summary' && !summary) {
-      handleSummarize();
-    } else if (tabId === 'mcqs' && mcqs.length === 0) {
-      handleGenerateMCQ();
-    }
   };
 
   return (
@@ -215,7 +209,7 @@ function App() {
         {!selectedVideo && <VideoList videos={videos} onSelect={handleSelectVideo} />}
 
         {selectedVideo && (
-          <div className="video-workspace-container">
+          <div className={`video-workspace-container ${isSidebarOpen ? 'sidebar-open' : 'sidebar-closed'}`}>
             <div className={`video-main-content ${isSidebarOpen ? 'sidebar-open' : ''}`}>
               <button className="back-button" onClick={() => setSelectedVideo(null)}>← Back to Results</button>
 
@@ -237,7 +231,7 @@ function App() {
               isOpen={isSidebarOpen}
               setIsOpen={setIsSidebarOpen}
             >
-              {activeTab === 'transcript' && (
+              <div style={{ display: activeTab === 'transcript' ? 'block' : 'none' }}>
                 <div className="transcript-panel-body">
                   <h3>Transcript</h3>
                   {transcript ? (
@@ -246,14 +240,20 @@ function App() {
                     <p>Transcript is being generated...</p>
                   )}
                 </div>
-              )}
-              {activeTab === 'summary' && (
-                <div className="output-section">
+              </div>
+
+              <div style={{ display: activeTab === 'summary' ? 'block' : 'none' }}>
+                {loadingSummary ? (
+                  <div className="no-content">
+                    <p>Summarizing the video for you. This can take upto a few moments...</p>
+                  </div>
+                ) : (
                   <OutputDisplay title="Summary" content={summary} />
-                </div>
-              )}
-              {activeTab === 'mcqs' && (
-                mcqs.length > 0 ? (
+                )}
+              </div>
+
+              <div style={{ display: activeTab === 'mcqs' ? 'block' : 'none' }}>
+                {mcqs.length > 0 ? (
                   <MCQDisplay
                     questions={mcqs}
                     onSubmit={handleSubmitMCQ}
@@ -262,19 +262,41 @@ function App() {
                   />
                 ) : (
                   <div className="no-content">
-                    <p>{loading ? 'Generating MCQs...' : 'Click "Generate MCQs" to start the quiz.'}</p>
+                    <p>{loading ? 'Generating MCQs...' : 'MCQs are being generated...'}</p>
                   </div>
-                )
-              )}
-              {videoId && (
-                <div style={{ display: activeTab === 'chat' ? 'block' : 'none', height: '100%' }}>
+                )}
+              </div>
+
+              <div style={{ display: activeTab === 'chat' ? 'block' : 'none', height: '100%' }}>
+                {videoId && (
                   <ChatInterface
                     videoId={videoId}
                     onClose={() => setIsSidebarOpen(false)}
                     isChunking={isChunking}
+                    messages={chatMessages}
+                    setMessages={setChatMessages}
                   />
-                </div>
-              )}
+                )}
+              </div>
+
+              <div style={{ display: activeTab === 'recommendations' ? 'block' : 'none' }}>
+                <h3>Recommended Literature</h3>
+                {recommendations.length > 0 ? (
+                  <div className="recommendations-list">
+                    {recommendations.map((rec, index) => (
+                      <a key={index} href={rec.link} target="_blank" rel="noopener noreferrer" className="rec-card">
+                        <img src={rec.thumbnails[0].url} alt={rec.title} />
+                        <div className="rec-info">
+                          <h4>{rec.title}</h4>
+                          <p>{rec.channel.name}</p>
+                        </div>
+                      </a>
+                    ))}
+                  </div>
+                ) : (
+                  <p>Finding recommendations...</p>
+                )}
+              </div>
             </SidePanel>
           </div>
         )}

@@ -17,7 +17,7 @@ const MCQDisplay = ({ questions, onSubmit, gradingResults, loading }) => {
     if (!questions || questions.length === 0) return null;
 
     return (
-        <div className="mcq-container">
+        <>
             <h3>Knowledge Check</h3>
 
             {questions.map((q) => {
@@ -69,7 +69,7 @@ const MCQDisplay = ({ questions, onSubmit, gradingResults, loading }) => {
                     <h4>Final Score: {gradingResults.score}</h4>
                 </div>
             )}
-        </div>
+        </>
     );
 };
 

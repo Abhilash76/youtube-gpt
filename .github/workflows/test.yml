@@ -27,6 +27,8 @@ jobs:
         PINECONE_API_KEY: "mock-key"
         OLLAMA_BASE_URL: "http://localhost:11434"
         COHERE_API_KEY: "mock-key"
+        GROQ_API_KEY: "mock-key"
+        HF_TOKEN: "mock-key"
       run: |
         export PYTHONPATH=$PYTHONPATH:$(pwd)/src
         pytest tests/
