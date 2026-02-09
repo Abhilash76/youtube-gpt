@@ -29,15 +29,8 @@ const MCQDisplay = ({ questions, onSubmit, gradingResults, loading }) => {
                         <p className="mcq-question">{q.id}. {q.question}</p>
                         <div className="mcq-options">
                             {q.options.map((option, idx) => (
-                                <label key={idx} className={`mcq-option ${answers[q.id] === option ? 'selected' : ''}`}>
-                                    <input
-                                        type="radio"
-                                        name={`q-${q.id}`}
-                                        value={option}
-                                        checked={answers[q.id] === option}
-                                        onChange={() => handleOptionSelect(q.id, option)}
-                                        disabled={!!gradingResults}
-                                    />
+                                <label key={idx} className={`mcq-option ${answers[q.id] === option ? 'selected' : ''}`} onClick={() => !gradingResults && handleOptionSelect(q.id, option)}>
+                                    <span className="option-index">{idx + 1}</span>
                                     {option}
                                 </label>
                             ))}

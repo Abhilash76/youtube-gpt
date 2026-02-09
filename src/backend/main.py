@@ -212,12 +212,15 @@ async def ingest_transcript(request: IngestRequest):
 @app.post("/summarize")
 async def summarize_transcript(request: SummaryRequest):
     try:
-        summary = Summarize.summarize_topic(request.transcript_text)
+        loop = asyncio.get_event_loop()
+        summary = await loop.run_in_executor(executor, Summarize.summarize_topic, request.transcript_text)
         return {"summary": summary}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
 from mcq_service import MCQService
+from recommendation import get_recommendations
+from mindMap import MindMapService
 
 class MCQRequest(BaseModel):
     transcript_text: str
@@ -232,7 +235,13 @@ async def generate_mcq(request: MCQRequest):
     try:
         if transcript_rag is None:
             raise HTTPException(status_code=503, detail="RAG service not initialized")
-        mcq_data = MCQService.generate_mcqs_from_text(request.transcript_text, transcript_rag.llm)
+        loop = asyncio.get_event_loop()
+        mcq_data = await loop.run_in_executor(
+            executor, 
+            MCQService.generate_mcqs_from_text, 
+            request.transcript_text, 
+            transcript_rag.llm
+        )
         return mcq_data
     except Exception as e:
         print(f"MCQ Generation error: {e}")
@@ -244,7 +253,10 @@ async def grade_mcq(request: GradeRequest):
     try:
         if transcript_rag is None:
             raise HTTPException(status_code=503, detail="RAG service not initialized")
-        grading_result = MCQService.grade_mcq_answers(
+        loop = asyncio.get_event_loop()
+        grading_result = await loop.run_in_executor(
+            executor,
+            MCQService.grade_mcq_answers,
             request.transcript_text, 
             request.questions, 
             request.user_answers,
@@ -258,56 +270,31 @@ async def grade_mcq(request: GradeRequest):
 
 @app.post("/recommend")
 async def recommend_literature(request: RecommendRequest):
+    return {"recommendations": await get_recommendations(
+        request.transcript_text, 
+        request.summary, 
+        transcript_rag, 
+        executor
+    )}
+
+class MindMapRequest(BaseModel):
+    transcript_text: str
+
+@app.post("/mindmap")
+async def generate_mind_map(request: MindMapRequest):
     try:
-        # Use Ollama via transcript_rag to generate 3 search queries
-        prompt_text = f"Based on the following content, suggest 3 specific YouTube search queries for 'Recommended Literature' or advanced study. Return ONLY the queries, one per line.\n\nContent: {request.summary or request.transcript_text[:2000]}"
-        
         if transcript_rag is None:
             raise HTTPException(status_code=503, detail="RAG service not initialized")
-
-        # Invoke Ollama
-        response = transcript_rag.llm.invoke(prompt_text)
-        content = response.content.strip()
-        
-        # Clean thinking/thought tags if present (e.g., <thought>...</thought> or <think>...</think>)
-        content = re.sub(r'<thought>.*?</thought>', '', content, flags=re.DOTALL)
-        content = re.sub(r'<think>.*?</think>', '', content, flags=re.DOTALL)
-        
-        queries = content.strip().split('\n')
-        # Clean queries (remove numbers/bullets)
-        queries = [re.sub(r'^(\d+\.|\-|\*)\s*', '', q).strip() for q in queries if q.strip() and len(q.strip()) > 5]
-        
-        all_recommendations = []
-        
-        async def fetch_recommendations(query):
-            def do_search():
-                try:
-                    search = VideosSearch(query, limit=2)
-                    return search.result().get("result", [])
-                except Exception as e:
-                    print(f"Search error for query '{query}': {e}")
-                    return []
-            
-            loop = asyncio.get_event_loop()
-            return await loop.run_in_executor(executor, do_search)
-
-        # Fetch in parallel
-        tasks = [fetch_recommendations(q) for q in queries[:3]]
-        results = await asyncio.gather(*tasks)
-        
-        for res in results:
-            all_recommendations.extend(res)
-            
-        seen = set()
-        unique_recs = []
-        for r in all_recommendations:
-            if r['link'] not in seen:
-                unique_recs.append(r)
-                seen.add(r['link'])
-        
-        return {"recommendations": unique_recs[:5]}
+        loop = asyncio.get_event_loop()
+        mind_map_code = await loop.run_in_executor(
+            executor, 
+            MindMapService.generate_mind_map, 
+            request.transcript_text, 
+            transcript_rag.llm
+        )
+        return {"mind_map": mind_map_code}
     except Exception as e:
-        print(f"Recommendation error: {e}")
+        print(f"Mind Map Generation error: {e}")
         print(traceback.format_exc())
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -389,6 +376,51 @@ async def chat_with_video(request: ChatRequest):
     except HTTPException:
         raise
     except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/process-all")
+async def process_all(request: MindMapRequest):
+    """Run all processing tasks in parallel and return results."""
+    try:
+        if transcript_rag is None:
+            raise HTTPException(status_code=503, detail="RAG service not initialized")
+            
+        loop = asyncio.get_event_loop()
+        
+        # 1. Start all tasks concurrently
+        ingest_task = loop.run_in_executor(executor, transcript_rag.ingest_transcript, request.transcript_text, "temp_vid", "agentic")
+        summary_task = loop.run_in_executor(executor, Summarize.summarize_topic, request.transcript_text)
+        mcq_task = loop.run_in_executor(executor, MCQService.generate_mcqs_from_text, request.transcript_text, transcript_rag.llm)
+        mindmap_task = loop.run_in_executor(executor, MindMapService.generate_mind_map, request.transcript_text, transcript_rag.llm)
+        recommend_task = get_recommendations(request.transcript_text, "", transcript_rag, executor)
+        
+        # 2. Wait for all tasks to complete
+        # We use gather to run them in parallel
+        # Ingest task is technically background but we wait for it to ensure consistency if needed
+        results = await asyncio.gather(
+            summary_task, 
+            mcq_task, 
+            mindmap_task, 
+            recommend_task, 
+            ingest_task,
+            return_exceptions=True
+        )
+        
+        # 3. Extract results and handle possible errors in individuals
+        summary_res = results[0] if not isinstance(results[0], Exception) else f"Error: {results[0]}"
+        mcq_res = results[1] if not isinstance(results[1], Exception) else {"questions": []}
+        mindmap_res = results[2] if not isinstance(results[2], Exception) else ""
+        recommend_res = results[3] if not isinstance(results[3], Exception) else []
+        
+        return {
+            "summary": summary_res,
+            "mcqs": mcq_res.get("questions", []),
+            "mind_map": mindmap_res,
+            "recommendations": recommend_res
+        }
+    except Exception as e:
+        print(f"Process All error: {e}")
+        print(traceback.format_exc())
         raise HTTPException(status_code=500, detail=str(e))
 
 if __name__ == "__main__":

@@ -6,6 +6,7 @@ const SidePanel = ({ activeTab, onTabChange, isOpen, setIsOpen, children }) => {
     { id: 'summary', label: 'Summary' },
     { id: 'mcqs', label: 'MCQs' },
     { id: 'chat', label: 'Chat with video' },
+    { id: 'mindmap', label: 'Mind Map' },
     { id: 'recommendations', label: 'Recommended Literature' },
   ];
 

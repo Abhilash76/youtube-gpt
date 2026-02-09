@@ -125,11 +125,11 @@ const ChatInterface = ({ videoId, onClose, isChunking, messages, setMessages }) 
 
                 {loading && (
                     <div className="chat-message assistant">
-                        <div className="chat-message-content">
-                            <div className="loading-dots">
-                                <span></span>
-                                <span></span>
-                                <span></span>
+                        <div className="chat-message-content" style={{ padding: '0.5rem 1rem' }}>
+                            <div className="chat-loading">
+                                <span className="chat-loading-circle"></span>
+                                <span className="chat-loading-circle"></span>
+                                <span className="chat-loading-circle"></span>
                             </div>
                         </div>
                     </div>

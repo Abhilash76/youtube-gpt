@@ -8,8 +8,13 @@ import OutputDisplay from './components/OutputDisplay';
 import MCQDisplay from './components/MCQDisplay';
 import ChatInterface from './components/ChatInterface';
 import SidePanel from './components/SidePanel';
+import Mermaid from './components/Mermaid';
 import api from './api';
-import './App.css'; // Ensure we use the default or custom CSS
+import { FiCopy, FiShare2, FiDownload } from 'react-icons/fi';
+import { SiWhatsapp, SiInstagram, SiLinkedin } from 'react-icons/si';
+import { HiOutlineMail } from 'react-icons/hi';
+import './App.css';
+import './Actions.css';
 
 function App() {
   const [videos, setVideos] = useState([]);
@@ -29,6 +34,10 @@ function App() {
   const [chatMessages, setChatMessages] = useState([]);
   const [recommendations, setRecommendations] = useState([]);
   const [loadingSummary, setLoadingSummary] = useState(false);
+  const [mindMap, setMindMap] = useState('');
+  const [loadingMindMap, setLoadingMindMap] = useState(false);
+  const [showShareMenu, setShowShareMenu] = useState(null);
+  const mermaidRef = React.useRef(null);
 
   const handleSearch = async (query) => {
     setLoading(true);
@@ -103,8 +112,8 @@ function App() {
           .finally(() => setIsChunking(false));
 
         // 3. Auto-generate Summary and MCQs and Recommendations
-        handleSummarize(transcriptText);
-        handleGenerateMCQ(transcriptText);
+        // 3. Parallel Processing of All AI Tasks
+        handleProcessAll(transcriptText, vId);
 
       } catch (err) {
         setError('Failed to get transcript. ' + (err.response?.data?.detail || err.message));
@@ -146,6 +155,22 @@ function App() {
     }
   };
 
+  const handleGenerateMindMap = async (text) => {
+    const transcriptToUse = text || transcript;
+    if (!transcriptToUse) return;
+    setLoadingMindMap(true);
+    try {
+      const response = await api.post('/mindmap', {
+        transcript_text: transcriptToUse
+      });
+      setMindMap(response.data.mind_map);
+    } catch (err) {
+      console.error("Mind Map generation failed:", err);
+    } finally {
+      setLoadingMindMap(false);
+    }
+  };
+
   const handleGenerateMCQ = async (text) => {
     const transcriptToUse = text || transcript;
     if (!transcriptToUse) return;
@@ -177,6 +202,36 @@ function App() {
     }
   };
 
+  const handleProcessAll = async (text, vId) => {
+    const transcriptToUse = text || transcript;
+    const currentVid = vId || videoId;
+    if (!transcriptToUse) return;
+
+    setLoadingSummary(true);
+    setLoadingMindMap(true);
+    setIsChunking(true);
+
+    try {
+      const response = await api.post('/process-all', {
+        transcript_text: transcriptToUse,
+        video_id: currentVid
+      });
+
+      const data = response.data;
+      setSummary(data.summary);
+      setMcqs(data.mcqs);
+      setMindMap(data.mind_map);
+      setRecommendations(data.recommendations);
+    } catch (err) {
+      console.error("Batch processing failed:", err);
+      setLlmError('Failed to process all video data smoothly.');
+    } finally {
+      setLoadingSummary(false);
+      setLoadingMindMap(false);
+      setIsChunking(false);
+    }
+  };
+
   const handleChatWithVideo = () => {
     if (!videoId) {
       setError('Video ID not available. Please wait for transcript to be generated.');
@@ -193,6 +248,68 @@ function App() {
     setActiveTab(tabId);
     setIsSidebarOpen(true);
   };
+
+  const getShareText = (type) => {
+    switch (type) {
+      case 'transcript': return transcript;
+      case 'summary': return summary;
+      case 'mcqs':
+        return mcqs.map((q, i) =>
+          `${i + 1}. ${q.question}\n` +
+          q.options.map((opt, oi) => `   ${oi + 1}) ${opt}`).join('\n')
+        ).join('\n\n');
+      case 'chat':
+        return chatMessages.map(m =>
+          `${m.role === 'user' ? 'User' : 'Youtube-GPT'}: ${m.content}`
+        ).join('\n\n');
+      case 'mindmap': return mindMap;
+      default: return '';
+    }
+  };
+
+  const handleCopy = (type) => {
+    const text = getShareText(type);
+    navigator.clipboard.writeText(text).then(() => {
+      alert('Copied to clipboard!');
+    });
+  };
+
+  const renderShareMenu = (type) => {
+    if (showShareMenu !== type) return null;
+    const text = encodeURIComponent(getShareText(type));
+    const url = encodeURIComponent(window.location.href);
+
+    return (
+      <div className="share-menu">
+        <a href={`mailto:?subject=Study Notes&body=${text}`} className="share-option">
+          <HiOutlineMail /> Email
+        </a>
+        <a href={`https://wa.me/?text=${text}`} target="_blank" rel="noopener noreferrer" className="share-option">
+          <SiWhatsapp /> WhatsApp
+        </a>
+        <a href={`https://www.linkedin.com/sharing/share-offsite/?url=${url}`} target="_blank" rel="noopener noreferrer" className="share-option">
+          <SiLinkedin /> LinkedIn
+        </a>
+        <div className="share-option" onClick={() => alert('Feature coming soon to Instagram API or use manual copy!')}>
+          <SiInstagram /> Instagram
+        </div>
+      </div>
+    );
+  };
+
+  const ActionButtons = ({ type }) => (
+    <div className="action-buttons">
+      <button className="icon-button" title="Copy" onClick={() => handleCopy(type)}>
+        <FiCopy />
+      </button>
+      <div style={{ position: 'relative' }}>
+        <button className="icon-button" title="Share" onClick={() => setShowShareMenu(showShareMenu === type ? null : type)}>
+          <FiShare2 />
+        </button>
+        {renderShareMenu(type)}
+      </div>
+    </div>
+  );
 
   return (
     <div className="app-container">
@@ -233,7 +350,10 @@ function App() {
             >
               <div style={{ display: activeTab === 'transcript' ? 'block' : 'none' }}>
                 <div className="transcript-panel-body">
-                  <h3>Transcript</h3>
+                  <div className="panel-header-actions">
+                    <h3>Transcript</h3>
+                    <ActionButtons type="transcript" />
+                  </div>
                   {transcript ? (
                     <ReactMarkdown>{transcript}</ReactMarkdown>
                   ) : (
@@ -248,18 +368,30 @@ function App() {
                     <p>Summarizing the video for you. This can take upto a few moments...</p>
                   </div>
                 ) : (
-                  <OutputDisplay title="Summary" content={summary} />
+                  <>
+                    <div className="panel-header-actions">
+                      <h3>Summary</h3>
+                      <ActionButtons type="summary" />
+                    </div>
+                    <OutputDisplay title="" content={summary} />
+                  </>
                 )}
               </div>
 
               <div style={{ display: activeTab === 'mcqs' ? 'block' : 'none' }}>
                 {mcqs.length > 0 ? (
-                  <MCQDisplay
-                    questions={mcqs}
-                    onSubmit={handleSubmitMCQ}
-                    gradingResults={gradingResults}
-                    loading={loading}
-                  />
+                  <>
+                    <div className="panel-header-actions">
+                      <h3>MCQs</h3>
+                      <ActionButtons type="mcqs" />
+                    </div>
+                    <MCQDisplay
+                      questions={mcqs}
+                      onSubmit={handleSubmitMCQ}
+                      gradingResults={gradingResults}
+                      loading={loading}
+                    />
+                  </>
                 ) : (
                   <div className="no-content">
                     <p>{loading ? 'Generating MCQs...' : 'MCQs are being generated...'}</p>
@@ -269,13 +401,52 @@ function App() {
 
               <div style={{ display: activeTab === 'chat' ? 'block' : 'none', height: '100%' }}>
                 {videoId && (
-                  <ChatInterface
-                    videoId={videoId}
-                    onClose={() => setIsSidebarOpen(false)}
-                    isChunking={isChunking}
-                    messages={chatMessages}
-                    setMessages={setChatMessages}
-                  />
+                  <>
+                    <div className="panel-header-actions">
+                      <h3>Chat</h3>
+                      <ActionButtons type="chat" />
+                    </div>
+                    <ChatInterface
+                      videoId={videoId}
+                      onClose={() => setIsSidebarOpen(false)}
+                      isChunking={isChunking}
+                      messages={chatMessages}
+                      setMessages={setChatMessages}
+                    />
+                  </>
+                )}
+              </div>
+
+              <div style={{ display: activeTab === 'mindmap' ? 'block' : 'none' }}>
+                <div className="panel-header-actions">
+                  <h3>Mind Map</h3>
+                  <ActionButtons type="mindmap" />
+                </div>
+                {loadingMindMap ? (
+                  <div className="no-content">
+                    <p>Creating your mind map. This might take a moment...</p>
+                  </div>
+                ) : mindMap ? (
+                  <div className="mindmap-container" style={{ textAlign: 'center' }}>
+                    <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '1.5rem' }}>
+                      Interactive mind map generated from video transcript.
+                    </p>
+                    <Mermaid ref={mermaidRef} chart={mindMap} />
+                    <div className="mindmap-actions" style={{ marginTop: '1.5rem' }}>
+                      <button
+                        className="icon-button"
+                        title="Download as PNG"
+                        onClick={() => mermaidRef.current?.downloadImage()}
+                        style={{ width: '45px', height: '45px', borderRadius: '50%', fontSize: '1.4rem' }}
+                      >
+                        <FiDownload />
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="no-content">
+                    <p>Mind map is being generated...</p>
+                  </div>
                 )}
               </div>
 
@@ -284,13 +455,13 @@ function App() {
                 {recommendations.length > 0 ? (
                   <div className="recommendations-list">
                     {recommendations.map((rec, index) => (
-                      <a key={index} href={rec.link} target="_blank" rel="noopener noreferrer" className="rec-card">
+                      <div key={index} onClick={() => handleSelectVideo(rec)} className="rec-card" style={{ cursor: 'pointer' }}>
                         <img src={rec.thumbnails[0].url} alt={rec.title} />
                         <div className="rec-info">
                           <h4>{rec.title}</h4>
                           <p>{rec.channel.name}</p>
                         </div>
-                      </a>
+                      </div>
                     ))}
                   </div>
                 ) : (
