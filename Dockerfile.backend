@@ -1,11 +1,12 @@
-FROM python:3.11-slim
+FROM python:3.11-slim-bookworm
 
 WORKDIR /app
 
-RUN apt-get update && apt-get install -y \
+RUN apt-get update && apt-get upgrade -y && apt-get install -y --no-install-recommends \
     build-essential \
     git \
     curl \
+    unzip \
     && rm -rf /var/lib/apt/lists/*
 
 RUN pip install --upgrade pip setuptools wheel
@@ -15,6 +16,11 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
+
+# Unzip the local quantized Nomic model into a fixed path inside the image
+RUN if [ -f "nomic-embed-text-v1-4bit-20260302T085500Z-1-001.zip" ]; then \
+      unzip -q nomic-embed-text-v1-4bit-20260302T085500Z-1-001.zip -d /app/nomic-embed-text-v1-4bit; \
+    fi
 
 ENV PYTHONPATH=/app/src
 CMD ["uvicorn", "src.backend.main:app", "--host", "0.0.0.0", "--port", "8000"]
