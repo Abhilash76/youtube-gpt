@@ -2,54 +2,25 @@ import os
 import time
 import re
 import logging
+import numpy as np
+import cohere
 from typing import Literal
 
-import cohere
-import numpy as np
-import torch
 from dotenv import load_dotenv
 from langchain_text_splitters.character import RecursiveCharacterTextSplitter
+from langchain_community.embeddings.ollama import OllamaEmbeddings
 from langchain_community.chat_models.ollama import ChatOllama
-from langchain_core.documents import Document
-from langchain_core.embeddings import Embeddings
-from langchain_core.prompts import ChatPromptTemplate
 from langchain_pinecone import PineconeVectorStore
+from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.documents import Document
+
 from pinecone import Pinecone, ServerlessSpec
-from transformers import AutoModel, AutoTokenizer, BitsAndBytesConfig
 
 # Setup logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 LOG = logging.getLogger(__name__)
 
 load_dotenv()
-
-
-class NomicLocalEmbeddings(Embeddings):
-    def __init__(self, model: AutoModel, tokenizer: AutoTokenizer):
-        self.model = model
-        self.tokenizer = tokenizer
-
-    def _embed(self, texts: list[str], task: str) -> list[list[float]]:
-        prefix = task + ": "
-        inputs = self.tokenizer(
-            [prefix + t for t in texts],
-            padding=True,
-            truncation=True,
-            return_tensors="pt",
-        ).to(self.model.device)
-
-        with torch.no_grad():
-            outputs = self.model(**inputs)
-            embeddings = outputs.last_hidden_state.mean(dim=1)
-            embeddings = torch.nn.functional.normalize(embeddings, p=2, dim=1)
-
-        return embeddings.cpu().tolist()
-
-    def embed_documents(self, texts: list[str]) -> list[list[float]]:
-        return self._embed(texts, task="search_document")
-
-    def embed_query(self, text: str) -> list[float]:
-        return self._embed([text], task="search_query")[0]
 
 class TranscriptRAG:
     def __init__(self):
@@ -58,9 +29,6 @@ class TranscriptRAG:
         self.ollama_base_url = os.getenv("OLLAMA_BASE_URL")
         self.ollama_api_key = os.getenv("OLLAMA_API_KEY")  # Optional, can be None
         self.cohere_api_key = os.getenv("COHERE_API_KEY")  # Added Cohere Key
-        self.nomic_model_path = os.getenv(
-            "NOMIC_EMBED_MODEL_PATH", "nomic-embed-text-v1-4bit"
-        )
         
         # 2. Handle OLLAMA_BASE_URL dynamically
         # Default to host.docker.internal if not provided, which works with the new docker-compose
@@ -79,28 +47,13 @@ class TranscriptRAG:
         if self.ollama_api_key:
             self.request_headers["Authorization"] = f"Bearer {self.ollama_api_key}"
 
-        # Initialize local quantized Nomic embedding model (4-bit)
-        bnb_config = BitsAndBytesConfig(
-            load_in_4bit=True,
-            bnb_4bit_compute_dtype=torch.bfloat16,
-            bnb_4bit_use_double_quant=True,
-            bnb_4bit_quant_type="nf4",
-        )
-
-        LOG.info(f"Loading local Nomic embedding model from: {self.nomic_model_path}")
-        self._embed_tokenizer = AutoTokenizer.from_pretrained(
-            self.nomic_model_path,
-            trust_remote_code=True,
-        )
-        self._embed_model_core = AutoModel.from_pretrained(
-            self.nomic_model_path,
-            quantization_config=bnb_config,
-            torch_dtype=torch.bfloat16,
-            device_map="auto",
-            trust_remote_code=True,
-        )
-        self.embed_model = NomicLocalEmbeddings(
-            model=self._embed_model_core, tokenizer=self._embed_tokenizer
+        # Initialize Models first (needed for PineconeVectorStore)
+        # Using nomic-embed-text as it's a reliable embedding model (768 dimensions)
+        # Alternative: "all-minilm" (384 dims), "mxbai-embed-large" (1024 dims)
+        self.embed_model = OllamaEmbeddings(
+            model='nomic-embed-text', 
+            base_url=self.ollama_base_url,
+            headers=self.request_headers
         )
         
         # Initialize Clients
