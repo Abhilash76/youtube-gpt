@@ -1,0 +1,101 @@
+Kubernetes Ingress in 5 mins
+
+Transcript with Timestamps
+
+[00:00] Hi, everyone.
+[00:01] My name is Sai Vennam,
+[00:02] and today we're going to be talking about Kubernetes Ingress in 5 minutes.
+[00:05] Now, I'm going to assume you already have the fundamental understandings of Kubernetes,
+[00:08] but if you don't, be sure to check out my video, "Kubernetes Explained".
+[00:12] Let's go ahead and get started.
+[00:15] Let's assume that we've got a pod
+[00:17] scaled out three times within my Kubernetes cluster,
+[00:20] and I've got three nodes in my Kubernetes cluster,
+[00:23] and this pod is scaled up to three.
+[00:26] Now, these pods together -
+[00:28] let's say I've created a grouping with the label selector
+[00:31] to create what's called a "service".
+[00:35] Now, a service
+[00:37] basically enables me to load balance requests to one of these pods,
+[00:41] and that's going to be our first start here.
+[00:44] Let's say we've got a "service.yaml" that defines that service.
+[00:47] One of the core things you can define in that is going to be a type,
+[00:51] and we're going to start with the basic one, "Cluster IP".
+[00:56] Now, basically every service that gets created in Kubernetes has a cluster IP.
+[01:01] It enables access to that service from within the Kubernetes network,
+[01:05] not the external network.
+[01:07] So, let's assume our service has a Cluster IP and move forward
+[01:10] to the next, more interesting, option here.
+[01:13] I could also specify that type as a Node port.
+[01:19] Now, a Node port is actually a lot like the name kind of makes it sound.
+[01:24] Now, we've got three nodes in our cluster,
+[01:26] and each one of those nodes has a publicly accessible IP.
+[01:30] Now, let's say that that publicly accessible IP looks something like 169.0.0.1,
+[01:37] 169.0.0.2, and so on for the third one.
+[01:44] Now, this is a publicly accessible IP address,
+[01:48] but what a Note Port will do is assign the same Node port,
+[01:52] so the same port, let's say it's 31,000, to all three of those nodes.
+[01:58] So, for external access from outside,
+[02:02] from the Internet that's coming in,
+[02:05] and that hits that port on any one of these IP addresses that's externally accessible.
+[02:11] It's going to route directly to service that's defined in that service.yaml.
+[02:17] So, that's an interesting approach and there's a couple of limitations.
+[02:21] So, basically any service can only have one port.
+[02:25] But more importantly,
+[02:26] if a node were to go down, say you're working with a cloud service provider
+[02:30] and you scale your nodes up and down a lot,
+[02:32] well, you're going to have to maintain that updated IP address that's going to change
+[02:36] when a new node comes up.
+[02:38] So, although it works, it's
+not the best approach
+[02:42] to exposing your applications on the public Internet.
+[02:45] Let's talk about a third type here.
+[02:47] It's going to be type "load balancer".
+[02:50] Now a load balancer, when you define it,
+[02:53] so, it's really dependent on how a cloud provider is providing their Kubernetes service.
+[02:57] But essentially the way it works,
+[03:00] the cloud provider is going to spin up something called an NLB,
+[03:03] or a "Network Load Balancer",
+[03:06] for every service that you expose this way.
+[03:08] And so, for users that are coming in and accessing that NLB,
+[03:12] that IP address, it's going to route directly to that service.
+[03:17] But although this is good, again, it's only one kind of service,
+[03:22] one load balancer IP address per service.
+[03:25] And, in addition, load balancers are a commodity at the end of the day.
+[03:31] If you need to expose a lot of services, that's a lot of load balancers
+[03:34] which can be inefficient when going to scale.
+[03:38] Now, the last one I want to talk about here is actually not even a service type;
+[03:42] it's a new thing called an "Ingress Resource"
+[03:45] which maybe we can define with an ingress.yaml file,
+[03:48] and this is going to be, you know, you're going to define a "kind: ingress".
+[03:55] Now an ingress is a little different.
+[03:57] The way ingress is going to work, when you create this,
+[04:00] it's going to create basically a set of rules within your cluster,
+[04:04] an ingress resource that can route based on a set of rules.
+[04:08] These rules are going to be really reminiscent
+[04:10] of something like an engine X reverse proxy.
+[04:13] So, the first thing that ingress will do is create
+[04:16] an external load balancer
+[04:19] that's able to handle requests coming in
+[04:22] and let's say that request comes in for app.com
+[04:26] which maps to an IP address that the ingress supports
+[04:29] and now here's where the interesting part comes in.
+[04:32] It can actually route based on a set of rules.
+[04:35] So, let's say we have a second set of pods in the cluster
+[04:38] and these set of pods route to a Service B.
+[04:47] Now, this rule - maybe we introduce a rule that says if the rule comes in,
+[04:53] or the route comes in with, let's say, serviceb.app.com,
+[05:01] then route to this set of services,
+[05:03] otherwise route all other traffic to Service A.
+[05:07] We'll just say "other".
+[05:09] So, an ingress is powerful because you can route multiple backend services
+[05:13] with a single IP address
+[05:15] and then do path-based routing.
+[05:17] So, as other advantages you can do something like TLS termination,
+[05:21] do virtual hosts
+[05:23] and a number of other kind of capabilities that become available.
+[05:26] So, this was Kubernetes ingress in five minutes.
+[05:29] If you enjoyed this video, or have any questions,
+[05:31] be sure to drop a like or a comment below.
+[05:33] Stay tuned and follow us for more videos like this in the future.
+[05:36] Thank you.

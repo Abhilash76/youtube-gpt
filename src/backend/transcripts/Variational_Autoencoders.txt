@@ -1,0 +1,445 @@
+Variational Autoencoders
+
+Transcript with Timestamps
+
+[00:00] hello everybody and welcome back to our
+[00:01] kevinsites so in a lot of real-world
+[00:03] problems we have a whole bunch of data
+[00:06] that we're looking at it could be images
+[00:07] or text or audio whatever it is but the
+[00:11] underlying factor the underlying process
+[00:13] of the data could be much simpler in a
+[00:15] much lower dimensional space than the
+[00:17] actual data that we're looking at so a
+[00:19] lot of techniques in machine learning
+[00:21] they try to compress the dimensionality
+[00:23] of your data into a smaller space one
+[00:25] very popular technique that's used a lot
+[00:27] in recent papers is called variational
+[00:30] autoencoders it is going to be a pretty
+[00:33] technical episode so I hope you're ready
+[00:35] to dive into the mechanics of
+[00:36] variational autoencoders my name is
+[00:38] Xander and welcome to archive insights
+[00:41] [Laughter]
+[00:43] [Music]
+[00:51] so before we dive into the mechanics of
+[00:54] variational autoencoders I first want to
+[00:56] introduce normal autoencoders so I'm
+[00:59] going to assume that you're already
+[01:00] familiar with the neural network
+[01:02] architectures that we have things like
+[01:04] back propagation and all of that
+[01:05] so what an autoencoder does is it takes
+[01:08] some kind of input data it could be an
+[01:10] image or a vector anything at all with a
+[01:12] very high dimensionality it's gonna run
+[01:14] it through this neural network and it's
+[01:15] gonna try and compress the data into a
+[01:17] smaller representation it does this with
+[01:20] two principal components the first
+[01:23] component is what we call the encoder
+[01:24] the encoder is simply a bunch of layers
+[01:27] they could be fully connected layers or
+[01:29] convolutional that are going to take the
+[01:30] input and they're going to compress it
+[01:32] down to a smaller representation which
+[01:35] has less dimensions than the input and
+[01:37] this is what we call the bottleneck and
+[01:39] then from the bottleneck is going to try
+[01:41] and reconstruct the input by using again
+[01:44] fully connected or convolutional layers
+[01:46] and then the last function of training
+[01:49] an auto encoder is simply looking at the
+[01:51] reconstructed version at the end of your
+[01:53] decoder network and then you're going to
+[01:55] simply compute the reconstruction loss
+[01:57] with respect to your input and by simply
+[02:00] comparing pixel to pixel differences in
+[02:02] the output we can create a loss function
+[02:03] and we can start training our network to
+[02:05] compress images and so obviously you
+[02:07] have simple encoders that use fully
+[02:09] connected layers but you can just as
+[02:11] well swap them out with convolution
+[02:12] if you're working with images or
+[02:14] something like audio for example and if
+[02:16] you look at what's going on here if you
+[02:18] train a deep convolutional net work to
+[02:19] do encoding and decoding of a whole
+[02:21] bunch of images you're actually creating
+[02:23] a whole new kind of compression
+[02:25] algorithm and Google is actually
+[02:27] thinking of using these types of
+[02:28] networks for reducing the amount of
+[02:30] bandwidth that you use on your phone so
+[02:32] if you download an image then the full
+[02:34] resolution image is first downscaled
+[02:36] then it's sent through you over the
+[02:38] wireless internet connection and then in
+[02:40] your phone there is actually a decoder
+[02:42] that reconstructs the full resolution
+[02:45] image from the compressed representation
+[02:46] and if you apply this to something like
+[02:49] m-miss for example then it's very
+[02:51] interesting to see what these hidden
+[02:53] representations are actually learning so
+[02:55] here you can see a bunch of images where
+[02:57] on the left side you can see the input
+[02:58] digits that are being fed through the
+[03:00] network and then on the right side all
+[03:03] of those are reconstructed images but
+[03:05] you can see what happens if we change
+[03:07] the size of the hidden representation so
+[03:10] if we use only a 2d hidden
+[03:12] representation that means that our
+[03:14] bottleneck you know in the middle of the
+[03:15] network is only two variables then we
+[03:18] get reconstructions that look pretty
+[03:20] okay but they are very fuzzy and the
+[03:22] fuzziness is because you force the
+[03:24] entire information of your image to go
+[03:26] through two single variables and then
+[03:28] when you reconstruct obviously you lose
+[03:30] some of that detail and that is why the
+[03:32] images look so fuzzy if you use more
+[03:34] dimensions in your latent representation
+[03:36] that you can get reconstructions that
+[03:38] are much clearer and much sharper but
+[03:40] you need more information in that
+[03:41] bottleneck and it's interesting to note
+[03:43] that the exact same technique is applied
+[03:45] to image segmentation as well so you
+[03:47] take an input image you run it through
+[03:48] your convolutional encoder it goes
+[03:50] through a bottleneck representation and
+[03:52] then it gets remapped to a full output
+[03:54] image but in this case instead of
+[03:56] reconstructing the original image you're
+[03:58] actually trying to target a segmented
+[04:00] version of your image and it's exactly
+[04:02] this type of network that is used in
+[04:04] self-driving cars to segment the
+[04:06] different parts of the public road into
+[04:08] specific objects that a car needs to
+[04:10] detect okay so that's the basic idea
+[04:12] behind auto-encoders but there are a few
+[04:14] very clever tricks that you can apply to
+[04:16] an auto encoder to have it do some
+[04:18] really fancy stuff so imagine that you
+[04:20] start with a normal m-miss digit it's a
+[04:22] clean image nothing's wrong with it but
+[04:24] then you add a whole lot of
+[04:25] to it and you're going to run that noisy
+[04:27] image through your encoder network you
+[04:30] get through the bottleneck
+[04:30] representation and then you try to
+[04:32] reconstruct the image but instead of
+[04:34] reconstructing the noisy image what
+[04:36] you're going to do is try and
+[04:37] reconstruct the original clean image and
+[04:39] if you train this network and a whole
+[04:41] bunch of these noisy and nice digits
+[04:43] you're going to try and force the
+[04:45] encoder step to actually get rid of the
+[04:47] noise and this is what we call a
+[04:49] denoising auto-encoder and so you can
+[04:51] see here that by using this approach you
+[04:53] can actually train a denoising
+[04:54] auto-encoder that is very good at
+[04:56] removing noise from input images and
+[04:58] denoising images isn't the only thing
+[05:00] that you can do with this type of
+[05:01] approach so in this case for example you
+[05:03] take an input and instead of adding
+[05:05] noise to it you simply crop a
+[05:07] rectangular area out of the image and
+[05:09] you throw it away you replace it with
+[05:10] white or black pixels you feed that
+[05:12] input image through the network and you
+[05:14] try to reconstruct the original full
+[05:16] image and this technique is what we call
+[05:18] neural impeding it's where you take a
+[05:20] small part of the image you throw it
+[05:21] away and then you ask the network to
+[05:23] reconstruct whatever was there in the
+[05:25] input image and with this approach you
+[05:27] can do simple things like removing
+[05:28] watermarks from images but you could
+[05:30] also remove a parked car for example if
+[05:32] you are filming on a movie set in a
+[05:35] natural setting okay so now that we have
+[05:37] the basic concept behind a normal auto
+[05:39] encoder
+[05:39] let's introduce variational autoencoders
+[05:41] so the idea behind variational
+[05:44] auto-encoders is that instead of mapping
+[05:45] any input to a fixed vector you want to
+[05:49] map your input onto a distribution and
+[05:50] so the only thing that's different in a
+[05:52] variational auto encoder is that your
+[05:54] normal bottleneck vector C is replaced
+[05:57] by two separate vectors one representing
+[06:00] the mean of your distribution and the
+[06:01] other one representing the standard
+[06:03] deviation of that distribution and so
+[06:05] whenever you need a vector to feed
+[06:07] through your decoder network the only
+[06:09] thing you have to do is take a sample
+[06:10] from the distribution and then feed it
+[06:12] to the decoder and so to train a
+[06:14] variational auto encoder the loss
+[06:16] function in this case actually consists
+[06:18] of two terms the first term represents
+[06:20] the reconstruction loss so this is
+[06:22] really the same as the auto encoder step
+[06:24] except that here there is an expectation
+[06:26] operator because we are sampling from a
+[06:28] distribution and then the second part of
+[06:30] the loss functions is what we call the
+[06:32] KL divergence I'm not going to go into
+[06:34] all of the details because there is a
+[06:36] lot of math involved there but basically
+[06:38] what you want to make sure
+[06:39] is that the distribution that you're
+[06:40] learning is not too far removed from a
+[06:43] normally distributed discussion so
+[06:45] you're going to try and force your
+[06:47] latent distribution to be relatively
+[06:49] close to a mean of zero and a standard
+[06:52] deviation of one and so finally before
+[06:54] we can start training our variational
+[06:56] autoencoder we have one final trick that
+[06:58] we have to use because if you look at
+[07:00] the computation graph of our network
+[07:02] right now we have a problem in the
+[07:04] middle of that mat work after the
+[07:05] bottleneck we have a sampling operation
+[07:08] there is a node there that takes a
+[07:09] sample from a distribution and then
+[07:11] feeds that sample through the decoder
+[07:13] but the problem is that you cannot run
+[07:15] back propagation you cannot push
+[07:17] gradients through a sampling node so
+[07:19] this is an issue and so in order to run
+[07:21] your gradients through the entire
+[07:22] network and train everything end-to-end
+[07:24] we're going to use what we call the
+[07:26] reaper ammeter ization trick and so the
+[07:28] trick goes as follows if you look at the
+[07:29] latent vector that you're sampling you
+[07:31] can actually look at that vector as the
+[07:33] sum of a fixed mu which is just the
+[07:35] parameter that you're learning plus some
+[07:38] kind of a Sigma which is also a
+[07:39] parameter that you're learning and then
+[07:41] multiplied with an epsilon and this
+[07:43] epsilon is where we're gonna put the Siq
+[07:45] a stick part so this epsilon is always
+[07:48] going to be standard caution it's always
+[07:50] gonna have zero mean and standard
+[07:51] deviation of one we're gonna sample from
+[07:53] that epsilon and then multiply it with
+[07:55] Sigma ad mu and we have our latent
+[07:58] vector and so the clever thing here is
+[08:00] that now our mu and our Sigma those are
+[08:03] the only things that we actually want to
+[08:04] train so there we have to be able to
+[08:06] compute gradients and run back
+[08:07] propagation but that epsilon well that
+[08:10] doesn't really matter because we don't
+[08:11] want to change that epsilon ever again
+[08:13] that epsilon is a fixed elastic node
+[08:15] okay it's still sarcastic but we don't
+[08:18] have to run back propagation through it
+[08:19] so it doesn't matter that it's sampling
+[08:21] operation and so this is the repair
+[08:23] matter is a tient trick where instead of
+[08:25] having a full stochastic node that is
+[08:27] blocking all of your gradients because
+[08:29] you can't do back propagation through it
+[08:31] you're going to split it up into a part
+[08:33] where you can do back prop and then
+[08:35] another part which is still stochastic
+[08:37] but which you don't want to train
+[08:38] because it's fixed pretty clever right
+[08:41] so let's take a quick look at some code
+[08:43] in tensor flow so here you can see the
+[08:45] encoder network which is training two
+[08:47] sets of parameters the means and the
+[08:49] standard deviations of our distribution
+[08:52] and then in the actual auto-encoder
+[08:53] we're going to do a sampling operation
+[08:56] from the distribution to actually get
+[08:58] our latent vector and then the you can
+[09:00] see where they compute the KL divergence
+[09:02] and then you're actually going to
+[09:04] compute your loss and back proc through
+[09:05] it alright and so before we go and look
+[09:08] at some visual results of what you can
+[09:09] do with variational autoencoders I want
+[09:12] to note one final thing there is a new
+[09:14] class of variational autoencoders which
+[09:16] has a lot of promising results
+[09:18] that's called disentangled variational
+[09:20] autoencoders and the basic idea behind
+[09:22] this disentanglement is that you want to
+[09:24] make sure that the different neurons in
+[09:26] your latent distribution but they are
+[09:29] uncorrelated that they all try and learn
+[09:31] something different about the input data
+[09:33] and so to implement this the only thing
+[09:35] you have to change is add one hyper
+[09:37] parameter through your loss function
+[09:39] that weighs how much this KL divergence
+[09:41] is present in the loss function and so
+[09:44] in the disentangled version the auto
+[09:46] encoder will only use a specific latent
+[09:48] variable if it really has a benefit and
+[09:51] if it doesn't benefit the compression
+[09:53] then it will simply stick to the normal
+[09:56] so in order to show the results of a
+[09:58] disentangled representation let's look
+[10:00] at a very simple data set the data set
+[10:02] consists of images that are generated
+[10:04] from for latent factors so you have the
+[10:06] x position the y position the size of
+[10:08] the objects and the rotation of the
+[10:10] object and by just picking a sample from
+[10:13] that distribution you have four values
+[10:14] you can just generate an image that is
+[10:17] generated from exactly that hidden
+[10:19] representation and then the idea is if
+[10:21] you train a disentangled variational
+[10:23] auto encoder what you would like to see
+[10:25] is that the auto encoder is able to
+[10:27] reconstruct and come up with that exact
+[10:29] mapping of those four latent variables
+[10:31] to encode the information in its inputs
+[10:34] and it turns out that if you use the
+[10:36] normal loss function of a variational
+[10:37] auto encoder it simply comes up with a
+[10:39] whole bunch of latent spaces but it's
+[10:42] not really finding exactly those latent
+[10:44] variables that we use to generate the
+[10:46] images but if you disentangle your
+[10:49] representations it gets much closer so
+[10:51] here on the left side you can see that
+[10:53] by increasing that beta factor in your
+[10:54] auto encoder you're actually forcing
+[10:57] your auto encoder to map the information
+[10:59] onto only a few of those latent
+[11:01] variables so instead of using all ten of
+[11:04] them
+[11:04] the autoencoder only uses five of the
+[11:07] latent variables to encode the
+[11:09] information and you can see that the
+[11:10] first one represents the Y position the
+[11:13] second is the x position then you have
+[11:15] the scale which is the third one and
+[11:17] then in fact there are two latent
+[11:18] representations that the auto encoder
+[11:20] used for representing the rotation of an
+[11:23] object but interestingly all the other
+[11:25] latent representations even though they
+[11:27] are there they are still fixed at the
+[11:30] harshin distribution and this is because
+[11:32] they weren't really necessary to encode
+[11:34] the information of our input and here
+[11:36] you can see really interesting results
+[11:38] where they applied variational
+[11:40] autoencoders at google deepmind's on
+[11:41] their deepmind lab environment so you
+[11:43] can see a 3d world where an agent can
+[11:45] sort of run around and what they did is
+[11:48] they they compress the input images that
+[11:51] the agent is seeing in two latent space
+[11:53] and then they reconstruct it but what
+[11:55] you can also do is you can start
+[11:57] changing the latent variables and then
+[11:59] see what happens to the reconstruction
+[12:01] and so it turns out that if you use a
+[12:03] disentangled variational auto encoder
+[12:04] then changing the latent variables
+[12:07] actually corresponds to some very
+[12:08] interpretive things so here you can see
+[12:11] that changing the first latent variable
+[12:13] actually changes the color of the floor
+[12:15] but nothing else and then there are
+[12:18] other latent variables that correspond
+[12:19] to turning to the left or turning to the
+[12:21] right and there are even some that
+[12:23] changed the rotation and the identity of
+[12:25] specific objects that the agent is
+[12:28] looking at and in contrast if you don't
+[12:30] use this disentanglement then whenever
+[12:32] you start changing a latent
+[12:33] representation everything starts
+[12:35] blurring up in the image and it's not
+[12:37] really clear what this latent vector was
+[12:39] trying to encode and so I think this
+[12:41] image sums everything up on the left
+[12:42] side you have a disentangled variational
+[12:44] auto encoder and you can see that if you
+[12:46] change the first I mention in your
+[12:48] latent space then the face is rotated
+[12:51] but nothing else changes if you do the
+[12:54] same thing in a normal variational or
+[12:56] encoder the face also rotates but you
+[12:58] can see that a lot of other stuff is
+[13:00] changing as well and then as a
+[13:02] comparison on the right side you can see
+[13:03] the results for a generative adversarial
+[13:05] Network and so the holy grail of
+[13:07] disentangle variational auto-encoders is
+[13:09] to have some kind of a network that can
+[13:11] extract very useful causal features from
+[13:15] a very high dimensional space and then
+[13:17] use those
+[13:18] for some tasks that it's trying to learn
+[13:20] and the hope is then that those learned
+[13:22] features will also generalize to the
+[13:24] mains outside of your training data and
+[13:26] so one of the common domains where
+[13:28] people are trying to apply variational
+[13:30] autoencoders is for example in
+[13:32] reinforcement learning because the whole
+[13:33] problem in reinforcement learning is
+[13:35] that you have very sparse rewards and it
+[13:37] takes a really long time to train
+[13:39] anything so by using this variational
+[13:42] autoencoder
+[13:42] as some sort of a feature extractor the
+[13:45] hope is that you can actually run your
+[13:47] agent on the representation on the
+[13:50] compressed representation instead of on
+[13:52] the full input space and so when using
+[13:54] this in practice there is actually a
+[13:56] very clear trade-off if you disentangle
+[13:59] the latent space too little then your
+[14:01] network is sort of overfitting because
+[14:03] you give it too much freedom it can just
+[14:06] learn how to reconstruct your input
+[14:08] training data but it won't generalize to
+[14:10] unseen data in new cases on the other
+[14:13] hand if you disentangle too much then
+[14:15] you actually lose a lot of the high
+[14:18] definition detail in your input and this
+[14:20] can actually hurt performance in a lot
+[14:22] of applications so personally I find
+[14:24] this a really interesting idea and I'm
+[14:26] very curious if this will lead to some
+[14:29] types of networks that can learn to
+[14:31] extract very useful low dimensional
+[14:34] information from very high dimensional
+[14:35] spaces because in the end we want to
+[14:38] train agents that are able to understand
+[14:40] the world by compressing a whole lot of
+[14:42] information and then learning useful
+[14:44] behavior on that latent space all right
+[14:47] congratulations if you made it to the
+[14:49] end of this video I hope you learned
+[14:51] something don't forget to subscribe and
+[14:53] I'd love to see you again in the next
+[14:54] episode of archived insights
+[14:56] [Music]

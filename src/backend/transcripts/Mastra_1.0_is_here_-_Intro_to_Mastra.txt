@@ -1,0 +1,102 @@
+Mastra 1.0 is here - Intro to Mastra
+
+Transcript with Timestamps
+
+[00:00] Mastra is the open-source agent
+[00:02] framework built specifically for
+[00:04] Typescript. It's modeled on established
+[00:06] patterns for building aic [music]
+[00:08] systems and gives you all the features
+[00:10] you need to implement AI powered
+[00:12] applications [music] out of the box. To
+[00:14] get started, run create master.
+[00:20] Select the provider like OpenAI. Enter
+[00:22] your key and remember to enable the
+[00:25] editor integration so [music] cursor can
+[00:27] generate up-to-date master code. To see
+[00:30] the default weather agents in action,
+[00:32] run dev and open the local development
+[00:34] studio. Here you [music] can select any
+[00:36] of your master workflows or agents and
+[00:39] test them. I'll ask the weather agent
+[00:41] about London. As you can see, the agent
+[00:44] [music] decided to call the weather
+[00:46] tool. And wow, who could have guessed
+[00:48] it? Turns out it's raining in London.
+[00:51] Say I ask a follow-up question about
+[00:53] activities. Because memory is on, the
+[00:56] agent can see the previous [music]
+[00:58] message about bad weather in the context
+[01:00] window and suggest something appropriate
+[01:02] to do. Here you can also change the
+[01:05] provider and test different models,
+[01:07] tinker with those model settings, and
+[01:09] even iterate on the system prompt.
+[01:11] Looking at the code, a master agent is a
+[01:14] model that follows a system instruction
+[01:16] [music] to decide when and how to call
+[01:19] its given tools. A tool in Mastra is
+[01:22] essentially a TypeScript [music]
+[01:24] function. We're looking at the default
+[01:26] weather tool, but you can also define
+[01:28] your own. For instance, a Google
+[01:30] calendar tool. This enables the agent to
+[01:33] create calendar [music] events for the
+[01:34] activities you decide.
+[01:39] Master also [music] supports MCP,
+[01:41] meaning you can point your agent at an
+[01:43] MCP server and consume its tools.
+[01:47] Sometimes you need more control to
+[01:49] achieve more predictable results. That's
+[01:51] where master workflows come into play.
+[01:54] They let you break tasks down into a
+[01:56] series of well-defined steps [music] and
+[01:58] control exactly how those steps interact
+[02:00] with the LLM. You can run steps one
+[02:02] after another and stream their progress
+[02:04] here [music] to the console, but you
+[02:06] could also stream these chunks to your
+[02:08] app. You can branch based on conditions,
+[02:10] run steps in parallel, or even pause the
+[02:13] workflow and bring a human [music] into
+[02:14] the loop when needed. Looking at the
+[02:16] code, the workflow API is expressed in
+[02:19] natural [music] task orientated
+[02:21] language. So you have an intuitive
+[02:23] developer experience. Now whether you're
+[02:25] building an agent or [music] a workflow,
+[02:27] the observability tab shows exactly what
+[02:30] happened under the hood for each agent
+[02:31] [music] run. Master also supports evals
+[02:35] and makes it easy to run scorers against
+[02:37] these traces to monitor [music] and
+[02:39] improve your agents in production.
+[02:41] Speaking of production, you can deploy
+[02:43] your master agent anywhere. However, the
+[02:46] most natural way is with master cloud.
+[02:48] Just go to the mastercloud dashboard and
+[02:50] create a project. Connect it to the
+[02:52] GitHub repo where your agent lives.
+[02:54] Paste your environment variables and hit
+[02:56] create project. This will start [music]
+[02:58] a new production deployment, giving you
+[03:01] a highly reliable and available API.
+[03:05] You can point your React Expo or any
+[03:07] other application at your API to
+[03:10] interact with the [music] agent from
+[03:11] your clients. By the way, cloud also has
+[03:14] a studio tab. It's essentially the same
+[03:16] studio you saw me running locally,
+[03:18] [music] but hosted in the cloud. The key
+[03:21] difference is that you can invite your
+[03:22] team to your cloud workspace, and they
+[03:25] [music] can test and iterates on the
+[03:26] agent collaboratively, even if they're
+[03:28] not particularly technical. Of course,
+[03:30] observability [music] and scoring are
+[03:32] here as well, giving you real-time
+[03:34] insights to measure performance and
+[03:35] continuously improve your agent at
+[03:37] scale. [music] I'm Alex Booker with the
+[03:39] Master team. We can't wait to see what
+[03:42] you build.

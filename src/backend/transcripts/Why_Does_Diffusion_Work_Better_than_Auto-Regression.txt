@@ -1,0 +1,430 @@
+Why Does Diffusion Work Better than Auto-Regression?
+
+Transcript with Timestamps
+
+[00:00] This is an artificial intelligence image 
+generator. Given a text description of a picture,  
+[00:06] it will create, out of nothing, an image 
+matching that description. As you can see,  
+[00:11] it is capable of generating high quality 
+images of all kinds of different scenes.  
+[00:16] And it’s not just images, in recent 
+years generative AI models have been  
+[00:20] developed that can generate text, audio, 
+code, and soon, videos too. All of these  
+[00:32] models are based on the same underlying 
+technology, namely deep neural networks.
+[00:38] In a few of my previous videos, I’ve explained 
+how and why deep neural networks work so well.  
+[00:43] But I only explained how neural nets can 
+solve prediction tasks. In a prediction task,  
+[00:49] the neural net is trained with a bunch of 
+examples of inputs and their labels, and  
+[00:54] tries to predict what the label will be for a new 
+input which it hasn’t seen before. For example,  
+[01:00] if you trained a neural net on images labelled 
+with the type of object appearing in each image,  
+[01:05] that neural net would learn to predict which 
+object a human would say is in an image,  
+[01:10] even for new images which it hasn’t seen before. 
+Under the hood, the way that prediction tasks  
+[01:16] are solved is by converting the training dataset 
+into a set of points in a space, and then fitting  
+[01:22] a curve through those points, so prediction 
+tasks are also known as curve-fitting tasks.
+[01:29] And while prediction is certainly cool and very 
+useful, it’s not generation. Right? This model  
+[01:35] is just fitting a curve to a set of points. 
+It can’t produce new images. So where does  
+[01:41] the creativity of these generative models come 
+from, if neural nets can only do curve fitting?
+[01:49] Well, all of these generative models, 
+are in fact just predictors. Yep,  
+[01:53] it turns out that the process of 
+producing novel works of art can be  
+[01:57] reduced to a curve fitting exercise. And 
+in this video, you’ll learn exactly how.
+[02:05] Suppose that we have a training dataset 
+consisting of a bunch of images. We want  
+[02:09] to train a neural net to create new images which 
+are similar in style to these training images.
+[02:16] The first thing you might try is to 
+simply use the images as labels to  
+[02:20] train the predictor. Here we don’t care 
+about the mapping from inputs to outputs,  
+[02:26] so we can just use anything we like for 
+the inputs, for example a completely  
+[02:30] black image. Predictors learn to map inputs to 
+outputs according to their training data. So,  
+[02:36] this predictor, once trained, should be able 
+to map the dummy all-black image to new images,  
+[02:42] like those seen in the training set, right? Err, 
+ok maybe not quite. That didn’t work so well,  
+[02:52] instead of producing a nice, beautiful 
+picture, we just got this blurry mess.
+[02:58] This demonstrates a very important fact about 
+of predictors. If there are multiple possible  
+[03:03] labels for the same input, the predictor 
+will learn to output the average of those  
+[03:07] labels. For traditional classification 
+tasks, this isn’t really a problem,  
+[03:13] because the average of multiple class labels 
+can still be a meaningful label. For example,  
+[03:19] this image could plausibly be given two 
+different labels, both cat and dog would be  
+[03:24] valid labels. In this case a classifier would 
+learn to output the average of those labels,  
+[03:30] which means you end up with a score of 0.5 cat and 
+0.5 dog. Which is still a useful label. In fact  
+[03:38] it’s arguably a better label than either of the 
+original ones. On the other hand, when you average  
+[03:44] a bunch of images together you do not get a 
+meaningful image out, you just get a blurry mess.
+[03:51] Let’s try something a bit easier this time. How 
+about, instead of generating a new image from  
+[03:56] scratch, we try to complete an image which has 
+a part of it missing. In fact, let’s make this  
+[04:02] really easy and suppose there is only one 
+missing pixel, say, the bottom right pixel. 
+[04:08] Can we train a neural net to predict the 
+value of this one missing pixel? Well,  
+[04:13] as before, the neural net is going to 
+output the average of plausible values  
+[04:17] that the missing pixel can take. But since 
+it’s only one pixel that we’re predicting,  
+[04:22] the average value is still meaningful. The average 
+of a bunch of colors is just another color,  
+[04:28] there’s no blurring effect. So, 
+this model works perfectly fine!
+[04:35] And we can use the value predicted by this neural  
+[04:38] net to complete images which are 
+missing the bottom-right pixel.
+[04:43] Great, so we can complete images 
+with 1 missing pixel… What about 2?
+[04:50] Well, we can do the same thing again, train 
+another neural net on images with 2 missing  
+[04:55] pixels, using the value of the second missing 
+pixel as the label. And then use this neural  
+[05:00] net to fill in the second missing pixel. Now 
+we have an image with just 1 missing pixel,  
+[05:08] and so we can use the first 
+neural net to fill in that. Great.
+[05:15] And we can do this for every pixel in the image; 
+train a neural net to predict the color of that  
+[05:20] pixel when it and all of the subsequent 
+pixels are missing. Now we can “complete”  
+[05:25] an image starting from a fully black image, 
+and filling in one pixel at a time. Crucially,  
+[05:31] each neural net only predicts one pixel, 
+and so there’s no blurring effect.
+[05:38] And there we have it, we have just generated a 
+plausible image, out of nothing… There’s just  
+[05:44] one small problem. If we run this model again, 
+it will generate exactly the same image… Not very  
+[05:50] creative, is it? But not to worry, we can fix this 
+by introducing a bit of random sampling. You see,  
+[05:57] all predictors actually output a probability 
+distribution over possible labels. Usually,  
+[06:04] we just take the label with the largest 
+probability as the predicted value. But  
+[06:09] if we want diversity in our outputs, we 
+can instead randomly sample a value from  
+[06:14] this probability distribution. This way, 
+each time the model is run, it will sample  
+[06:19] different values at each step, which therefore 
+changes the prediction for subsequent steps,  
+[06:24] and we get a completely different image each 
+time. Now we have an interesting image generator.
+[06:32] But still, at the end of the day, this model is 
+made of predictors. They take as input a partially  
+[06:38] masked image, and predict the value of the next 
+pixel. The only difference between this and a  
+[06:43] traditional image classifier is the label we used 
+for training. The labels for our generator happen  
+[06:49] to be pixel colors which come from the original 
+image itself, and not a human labeller. This is  
+[06:55] a very important point in practice: it means 
+we don’t need humans to manually label images  
+[07:00] for this model, we can just scrape unlabelled 
+images off the internet. But from the point of  
+[07:05] view of the neural net, it doesn’t know, nor 
+does it care, that the label came from the  
+[07:10] original image. As far as it’s concerned this is 
+just a curve fitting exercise, like any other.
+[07:17] The generative model we’ve just created is called 
+an auto-regressor. We have a removal process,  
+[07:23] which removes pixels one at a time, and we train 
+neural nets to undo this process, generating and  
+[07:29] adding back in pixels one at a time. This is 
+actually one of the oldest generative models,  
+[07:35] the very earliest use of auto-regression dates 
+back to 1927, where it was used to model the  
+[07:41] timing of sunspots. But auto-regressors 
+are still in use today. Most notably,  
+[07:46] Chat-GPT is an auto-regressor. Chat-GPT generates 
+text by using a transformer classifier to output  
+[07:54] a probability distribution over possible next 
+words, given a partial piece of text. However,  
+[08:00] auto-regressors are not used to generate 
+images anymore. And the reason is that,  
+[08:06] while they can generate very realistic 
+images, they take too long to run.
+[08:11] In order to generate a sample 
+with an auto-regressor,  
+[08:14] we need to evaluate a neural net once 
+for every element. This is fine for  
+[08:18] generating a few thousand words to make 
+a piece of text, but large images can  
+[08:23] have tens of millions of pixels. How can we 
+get away with fewer neural net evaluations?
+[08:33] For our auto-regressor, we removed one pixel at a 
+time. But we don’t have to remove only one pixel,  
+[08:40] we could, for example, remove a 4 
+by 4 patch of pixels at a time. And  
+[08:45] train the neural net to predict 
+all 16 missing pixels at once.
+[08:49] This way, when we use our 
+model to generate an image,  
+[08:52] it can produce 16 pixels per evaluation, 
+and so generation is 16 times as fast.
+[09:01] But there is a limit to this. We can’t generate 
+too many pixels at the same time. In the extreme  
+[09:07] case, if we try to generate every pixel in 
+the image at once, then we’re back to the  
+[09:12] original problem: there are many possible labels 
+that get averaged together into a blurry mess.
+[09:20] To be clear, the reason why the 
+image quality degrades is that,  
+[09:24] when we predict a bunch of pixels at the same 
+time, the model has to decide on the values for  
+[09:29] all of them at once. There are lots of plausible 
+ways that this missing patch could be filled in,  
+[09:35] and so the model outputs the average 
+of those. The model isn’t able to  
+[09:40] make sure that the generated values are 
+consistent with each-other. In contrast,  
+[09:46] when we predict one pixel at a time, the model 
+gets to see the previously generated pixels,  
+[09:51] and so the model can change its prediction for 
+this pixel to make it consistent with what has  
+[09:55] already been generated. This is why there’s a 
+trade-off, the more pixels we generate at once,  
+[10:01] the less computation we need to use, but the 
+worse the quality of the generated images will be.
+[10:08] Although, this problem only arises if the 
+values we are predicting are related to  
+[10:13] each other. Suppose that the values were 
+statistically independent of each-other,  
+[10:19] that is, knowing one of them does not 
+help to predict any others. In this case,  
+[10:24] the model doesn’t need look at 
+the previously generated values,  
+[10:28] since knowing what they were wouldn’t change 
+its prediction for the next value anyway. In  
+[10:33] this case you can predict all of them at 
+the same time without any loss in quality.
+[10:39] So, that means, ideally, we want our model to 
+generate a set of pixels that are unrelated to  
+[10:45] each other. For natural images, nearby 
+pixels are the most strongly related,  
+[10:51] because they are usually part of the same 
+object. Knowing the value of one pixel very  
+[10:56] often gives you a good idea of what color nearby 
+pixels will be. This means that removing pixels  
+[11:01] in contiguous chunks is actually the worst way to 
+do it. Instead, we should be removing pixels that  
+[11:08] are far away from each other, and hence more 
+likely to be unrelated. So if in each step,  
+[11:15] we remove a random set of pixels, and predict 
+values for those, then we can remove more pixels  
+[11:21] in each step for the same loss in image 
+quality, compared to contiguous chunks.
+[11:27] In order to minimize the number of steps 
+needed for generation, we want the pixels  
+[11:31] we remove in each step to be as spread out as 
+possible. Removing pixels in a random order is  
+[11:37] a pretty good way of maximizing the average 
+spread, but there is an even better way.
+[11:43] We can think of our generative model as two 
+processes: a removal process that gradually  
+[11:49] removes information from the input, until 
+nothing is left. And a generation process  
+[11:54] that uses neural nets to undo the removal process, 
+generating and adding back in information. So far,  
+[12:01] we have been completely removing pixels. 
+But rather than completely removing a pixel,  
+[12:07] we could instead remove only some of the 
+information from a pixel, by, for example,  
+[12:13] adding a small amount of random noise to it. 
+This means we don’t know exactly what the  
+[12:19] original pixel value was, but we do know it 
+was somewhere close to the noisy value. Now,  
+[12:26] instead of removing a bunch of pixels in each 
+step, we can add noise to the entire image.  
+[12:32] This way, we can remove information from 
+every pixel in the image in a single step,  
+[12:37] which is the most spread-out way of removing 
+information. And since its more spread out,  
+[12:42] you can remove more information in each step, 
+for the same loss in generation quality.
+[12:50] There is one small problem with this though. When 
+we want to generate a new image, we need to start  
+[12:55] the neural net off with some initial blank image. 
+When we were removing pixels, then every image  
+[13:01] eventually ends up as a completely black image, 
+so of course that’s where we start the generation  
+[13:07] process from. But now that we’re adding noise, 
+the values just keep getting larger and larger,  
+[13:13] never converging to anything. So where 
+do we start the generation process from?
+[13:18] We can avoid this problem by changing 
+our noising step slightly, so that we  
+[13:22] first scale down the original value and 
+then add the noise. This ensures that,  
+[13:28] when we repeat this noising step many 
+times, information from the original  
+[13:32] image will disappear, and the result will 
+be equivalent to a pure random sample from  
+[13:37] the noise distribution. So we can start our 
+generation process from any such noise sample.
+[13:44] And there we have it, this is known as a denoising 
+diffusion model. The overall form is identical  
+[13:50] to an auto-regressor, the only difference is 
+the way in which we remove information at each  
+[13:55] step. By adding noise, we can spread out the 
+removal of information all across the image,  
+[14:01] which makes the predicted values as independent 
+of each-other as possible, allowing you to use  
+[14:06] fewer neural net evaluations. Empirically, 
+diffusion models can produce high-quality  
+[14:12] photo-realistic images in about a hundred steps, 
+where auto-regressors would take millions.
+[14:20] Now that we understand how these generative models  
+[14:22] work at a conceptual level, if you are ever 
+going to implement these models in practice,  
+[14:26] there are a few important technical 
+details that you should be aware of.
+[14:31] First, in the procedure I described for 
+auto-regression, I used a different neural  
+[14:35] net in each step of the process. This is certainly 
+the best way to get the most accurate predictions,  
+[14:41] but it’s also very inefficient, since we 
+need to train a whole bunch of different  
+[14:46] neural nets. In practice, you would just use 
+the same model to do every step. This gives  
+[14:53] slightly worse predictions, but the savings 
+in computation time more than make up for it.
+[14:58] In order to train a single neural net 
+to perform all of the generation steps,  
+[15:02] you would remove a random number of 
+pixels from each input, and train the  
+[15:06] neural net to predict the corresponding 
+next pixel of each input. Additionally,  
+[15:12] you can also give the number of pixels removed as 
+an input to the neural net, so that it knows which  
+[15:17] pixel it’s supposed to be generating. Now this one 
+neural net can be used for all generation steps.
+[15:25] In the setup I just described, for 
+each training image, the neural  
+[15:29] is trained on only one generation 
+step for that image. But ideally,  
+[15:34] we would like to train it on every generation 
+step of every image, we can get more use out  
+[15:39] of our training data that way. If you did 
+this the naïve way you would have to evaluate  
+[15:45] the neural net once for every generation 
+step. Which means a lot more computation.
+[15:50] Fortunately, there exist special neural net 
+architectures, known as causal architectures,  
+[15:55] that allow you to train on all of these 
+generation steps while only evaluating  
+[16:00] the neural net once. There exist causal versions 
+of all of the popular neural net architectures,  
+[16:06] such as causal convolutional neural 
+nets, and causal transformers. Causal  
+[16:11] architectures actually give slightly 
+worse predictions, but in practice,  
+[16:15] auto-regression is almost always done with causal 
+architectures because the training is so much  
+[16:20] faster. The generation process for causal 
+architectures is still exactly same though.
+[16:26] For diffusion models, you can’t use 
+causal architectures and so you do  
+[16:30] have to just train with each data 
+point at a random generation step.
+[16:37] I described the diffusion model as predicting 
+the slightly less noisy image from the previous  
+[16:42] step. However, it’s actually better to predict 
+the original, completely clean image at every  
+[16:47] step. The reason for this is it makes the 
+job of the neural net easier. If you make  
+[16:54] it predict the noisy next step image, then the 
+neural net needs to learn how to generate images  
+[16:59] at all different noise levels. This means 
+the model will waste some of its capacity  
+[17:04] learning to produce noisy versions of images. 
+If you instead just have the neural net always  
+[17:10] predict the clean image, then the model only 
+needs to learn how to generate clean images,  
+[17:15] which is all we care about. You can then 
+take the predicted clean image and reapply  
+[17:21] the noising process to it to get the 
+next step of the generation process.
+[17:26] Except that when you predict the clean image 
+then, at the early steps of the generation  
+[17:32] process the model has only pure noise as input, so 
+the original clean image could have been anything,  
+[17:39] and so you get a blurry mess again. To avoid 
+this, we can train the neural net to predict  
+[17:46] the noise which was added to the image. Once we 
+have a predicted value for the noise, we can plug  
+[17:51] it into this equation to get a prediction for the 
+original clean image. So we are still predicting  
+[17:57] the original clean image, just in a round-about 
+way. The advantage of doing it this way is that,  
+[18:03] now, the model output is uncertain at the 
+later stages of the generation process,  
+[18:08] since any noise could have been added to 
+the clean image. So the model outputs the  
+[18:13] average of a bunch of different noise 
+samples, which is still valid noise.
+[18:19] So far we’ve just been generating images from 
+nothing, but most image generators actually  
+[18:24] allow you to provide a text prompt describing 
+the image you want to make. The way that this  
+[18:29] works is exactly the same, you just give the 
+neural net the text as an additional input at  
+[18:34] each step. These models are trained on pairs of 
+images and their corresponding text descriptions,  
+[18:39] usually scraped from image alt text tags found 
+on the internet. This ensures that the generated  
+[18:45] image is something for which the text prompt could 
+plausibly be given as a description of that image.
+[18:52] In principle, you can condition 
+generative models on anything,  
+[18:55] not just text, so long as you can find 
+appropriate training data. For example,  
+[19:01] here is a generative model that 
+is conditioned on sketches.
+[19:08] Finally, there’s a technique to make 
+conditional diffusion models work better,  
+[19:12] called classifier free guidance. For this, 
+during training the model will sometimes  
+[19:17] be given the text-prompts as additional 
+input, and sometimes it won’t. This way,  
+[19:22] the same model learns to do predictions with or 
+without the conditioning prompt as input. Then,  
+[19:28] at each step of the denoising process, the 
+model is run twice, once with the prompt,  
+[19:33] and once without. The prediction without the 
+prompt is subtracted from the prediction with  
+[19:38] the prompt, which removes details that are 
+generated without the prompt, thus leaving  
+[19:42] only details that came from the prompt, leading to 
+generations which more closely follow the prompt.
+[19:49] In conclusion, generative AI, like all 
+machine learning, is just curve fitting.
+[19:55] And that’s all for this video. If you enjoyed 
+it, please like and subscribe. And if you have  
+[19:59] any suggestions for topics you’d like to me to 
+cover in a future video, leave a comment below.

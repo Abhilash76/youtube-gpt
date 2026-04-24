@@ -1,0 +1,79 @@
+What are Transformers (Machine Learning Model)?
+
+Transcript with Timestamps
+
+[00:01] No, it's not those transformers.
+[00:04] But they can do some pretty cool things, let me show you.
+[00:07] So why did the banana across the road?
+[00:12] Because it was sick of being mashed!
+[00:15] Yeah, I'm not sure I quite get that one.
+[00:18] And that's because it was created by a computer.
+[00:22] I literally asked it to tell me a joke.
+[00:25] And this is what it came up with.
+[00:27] Specifically, I used a GPT-3, or a generative pre-trained transformer model.
+[00:35] The 3 here means that this is the third generation.
+[00:39] GPT-3 is an autoregressive language model
+[00:42] that produces text that looks like it was written by a human.
+[00:47] GPT-3 can write poetry, craft emails and evidently come up with its own jokes.
+[00:54] Off you go.
+[00:55] Now, while our banana joke isn't exactly funny,
+[00:59] it does fit the typical pattern of a joke with a set-up and a punch line and sort of, kind of makes sense.
+[01:04] I mean, who wouldn't cross the road to avoid getting mashed?
+[01:07] But look, GPT-3 is just one example of a transformer.
+[01:17] Something that transforms from one sequence into another.
+[01:23] And language translation is just a great example.
+[01:26] Perhaps we want to take our sentence of,
+[01:30] "Why did the banana cross the road?",
+[01:40] and we want to take that English phrase and translate it into French.
+[01:48] Well, transformers consist of two parts.
+[01:51] There is an encoder, and there is a decoder.
+[02:03] The encoder works on the input sequence,
+[02:08] and the decoder operates on the target output sequence.
+[02:16] Now, on the face of it, translation seems like little more than just like a basic lookup task,
+[02:21] so convert the "why" here in our English sentence to the French equivalent, "pourquoi".
+[02:30] But of course, language translation doesn't really work that way.
+[02:35] Things like word order and turns of phrase often mix things up.
+[02:40] And the way Transformers work is through sequence-to-sequence learning
+[02:44] where the Transformer takes a sequence of tokens,
+[02:48] in this case words in a sentence,
+[02:50] and predicts the next word in the output sequence.
+[02:55] It does this through iterating through encoder layers,
+[02:58] so the encoder generates encodings
+[03:01] that define which part of the input sequence are relevant to each other
+[03:06] and then passes these encodings to the next encoder layer.
+[03:09] The decoder takes all of these encodings and uses their derived context
+[03:14] to generate the output sequence.
+[03:17] Now, transformers are a form of semi-supervised learning.
+[03:30] By "semi-supervised", we mean that they are pre-trained in an unsupervised manner
+[03:36] with a large, unlabeled data set,
+[03:39] and then they're fine tuned through supervised training to get them to perform better.
+[03:46] Now, in previous videos, I've talked about other machine learning algorithms
+[03:49] that handle sequential input like natural language.
+[03:52] For example, there are recurrent neural networks, or RRNs.
+[03:57] What makes Transformers a little bit different
+[04:00] is that they do not necessarily process data in order.
+[04:04] Transformers use something called an attention mechanism.
+[04:12] And this provides context around items in the input sequence,
+[04:16] so rather than starting our translation with the word "why" because it's at the start of the sentence,
+[04:21] the Transformer attempts to identify the context that bring meaning in each word in the sequence.
+[04:27] And it's this attention mechanism that gives Transformers a huge leg up
+[04:32] over algorithms like RNN that must run in sequence.
+[04:35] Transformers run multiple sequences in parallel.
+[04:42] And this vastly speeds up training times.
+[04:46] So beyond translations, what can Transformers be applied to?
+[04:50] Well, document summaries, they're another great example.
+[04:53] You can like feed in a whole article as the input sequence
+[04:57] and then generate an output sequence
+[05:00] that's going to really just be a couple of sentences that summarize the main points.
+[05:06] Transformers can create whole new documents of their own, for example, like write a whole blog post.
+[05:11] And beyond just language, Transformers have done things like learn to play chess
+[05:17] and perform image processing that even rivals the capabilities of convolutional neural networks.
+[05:23] Look, Transformers are a powerful, deep learning model, and
+[05:26] thanks to how the attention that mechanism can be parallelized,
+[05:29] are getting better all the time.
+[05:31] And who knows?
+[05:32] Pretty soon, maybe they'll even be able to pull off banana jokes that are actually funny.
+[05:40] If you have any questions, please drop us a line below,
+[05:42] and if you want to see more videos like this in the future,
+[05:45] please like and subscribe.
+[05:47] Thanks for watching.

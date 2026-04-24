@@ -1,0 +1,709 @@
+Variational Inference | Evidence Lower Bound (ELBO) | Intuition & Visualization
+
+Transcript with Timestamps
+
+[00:00] you are looking at the distribution over
+[00:01] a latent variable set
+[00:03] so you found posterior p of set given
+[00:05] some data
+[00:06] but you don't have a closed form it's
+[00:08] quite complicated how do you find the
+[00:10] mode
+[00:10] the mean how can you sample it maybe you
+[00:12] can use a surrogate posterior
+[00:15] q which is almost as good and is easy to
+[00:18] work with
+[00:18] welcome to this video we will introduce
+[00:21] variational inference
+[00:23] [Music]
+[00:28] welcome to this new video today we want
+[00:30] to look at the variational inference
+[00:32] and the evidence lower bound shorthand
+[00:34] elbow
+[00:35] for this we will first look at the
+[00:37] problems that posterior induces
+[00:40] and how we find a remedy with a
+[00:42] surrogate posterior
+[00:44] then we will derive the elbow and in the
+[00:46] end we will look at some visual examples
+[00:49] on what it means to use the elbow in
+[00:51] context of variational inference
+[00:54] in the intro we've seen that we are
+[00:56] working with posteriors
+[00:57] over latent variable set so here we have
+[01:00] the posterior or the distribution over
+[01:02] this latent variable set
+[01:04] given some data that we observed and
+[01:06] even though i painted it here
+[01:08] in general we don't have access to this
+[01:10] closed form solution and shortly we will
+[01:12] see why
+[01:13] and the problem might not be as
+[01:15] representative in one dimensions
+[01:17] but think of multiple latent variables
+[01:19] and also a high dimensional observed
+[01:22] space
+[01:22] so in general we are looking at directed
+[01:25] graphical models
+[01:27] with observed variables
+[01:30] and i will call them x vector and
+[01:33] latent variables which are set
+[01:36] vector and they can be of different size
+[01:38] they don't have to be equal size so for
+[01:39] instance
+[01:40] this can be an rn vector and this can be
+[01:42] an rd vector
+[01:43] so let us know this down that you have
+[01:45] different
+[01:47] sizes and of course if we have access to
+[01:49] the directed graphical model we also
+[01:51] have access to the joint distribution
+[01:53] so this is equivalent to saying we have
+[01:57] the joint distribution and the joint
+[01:59] recall this was the probability
+[02:01] over x and set but now
+[02:04] we observe the x i mean the x are the
+[02:06] random variables that we can observe
+[02:08] so we observe them so we observe x
+[02:12] as a data set d so for instance think of
+[02:15] x
+[02:15] being images and latent variables
+[02:19] that are related to these images could
+[02:21] for instance be the camera
+[02:22] angle the lighting and our task is now
+[02:25] that we observe
+[02:26] x as a data set d and we want to perform
+[02:31] inference which means that we want to
+[02:34] use our knowledge on the data that we
+[02:37] observed
+[02:38] in order to find information on the
+[02:40] latent variable
+[02:41] so we want to look at a couple of
+[02:43] pictures and then we want to
+[02:45] see maybe what kind of
+[02:48] camera angle they have in common so the
+[02:50] task is
+[02:51] we want the posterior and of course we
+[02:55] can always
+[02:56] describe the posterior in terms of bayes
+[02:58] rule and then the posterior
+[03:00] of our latent variable given
+[03:03] under x and we fix x to our observations
+[03:06] d
+[03:07] is equivalent to the fraction of p
+[03:10] of x given d under set
+[03:13] times p offset over p
+[03:17] of x being d and recall we have here the
+[03:20] likelihood of our data or of our images
+[03:23] then we have a prior on our latent
+[03:26] variables
+[03:26] and here we have a marginal and the
+[03:29] problem
+[03:29] in defining this posterior or in finding
+[03:32] the functional form of the posterior
+[03:34] is in evaluating this marginal so that's
+[03:37] where the problem arises
+[03:38] the problem is the marginal and in some
+[03:41] other videos
+[03:42] you might have seen derivations where we
+[03:45] worked in terms of the proportional
+[03:46] and then later on we found normalization
+[03:48] constants
+[03:50] but this only works if we work in really
+[03:53] simple functional forms
+[03:54] where we can then identify normalization
+[03:57] constants
+[03:57] and in general that's not possible and
+[04:00] if we don't have
+[04:01] a normalization constant which is given
+[04:03] by the marginal here
+[04:04] then we don't have a full probability
+[04:07] density function over set
+[04:08] and the actual problem is we could
+[04:11] express the marginal
+[04:12] but it's just encompassing operations
+[04:15] that are intractable
+[04:16] because p of our random vector
+[04:20] x is the integration over all latent
+[04:23] random variables so from set 0 all the
+[04:25] way to set d
+[04:27] over the joint of p of x and set
+[04:30] and then d set 0 all the way to d set
+[04:33] capital d minus 1 of course because we
+[04:35] have the latent variables and as said
+[04:38] the problem here is that this is an
+[04:40] intractable and intractable means
+[04:43] incomputable because think of really
+[04:45] complicated models
+[04:47] where you for instance want to describe
+[04:48] images and then you want to
+[04:50] integrate over potentially 10 100
+[04:54] dimensions and you want to find closed
+[04:56] form solutions for this
+[04:58] this is just impossible so in general of
+[05:00] course there are exceptions
+[05:02] but here we are interested in real-world
+[05:04] scenarios
+[05:05] where this is not possible so coming
+[05:06] back to the task of
+[05:08] making inference now that we've seen
+[05:11] it's impossible to get this posterior
+[05:13] yes again even though i painted it down
+[05:15] here but this was just for visualization
+[05:17] purposes of
+[05:18] showing you that it is a complicated
+[05:20] distribution but
+[05:21] what is our remedy and the remedy is as
+[05:24] proposed here
+[05:25] to use a surrogate because even though
+[05:28] our output is complicated it might only
+[05:31] encompass
+[05:33] certain features that could also be
+[05:35] approximated by extremely simple
+[05:37] distributions and we've seen that our
+[05:38] posterior
+[05:39] is multimodal it is not symmetric and so
+[05:42] on
+[05:42] but it has this major peak here and if
+[05:45] we just
+[05:45] fit a gaussian to it for instance then
+[05:49] we might be able to capture most of the
+[05:51] posterior information
+[05:53] but still be able to handle it so let's
+[05:55] write down the remedy
+[05:56] and this means that instead find a
+[05:59] queue of set that is approximately
+[06:03] p offset under x observed with the data
+[06:07] d and we want to find this
+[06:09] as good as possible and here we also see
+[06:12] where the second term in variational
+[06:14] inference comes from
+[06:15] because that's a variational problem and
+[06:18] variational
+[06:19] that comes from variational calculus
+[06:21] because we want to optimize
+[06:23] over functions so optimize
+[06:27] for a function in conclusion we are
+[06:30] doing variational inference
+[06:31] so we optimize for a function
+[06:34] in order to be able to perform inference
+[06:38] and as always in machine learning in
+[06:40] order to find something that is
+[06:42] optimal we need a loss metric or more
+[06:44] generally
+[06:45] we need to evaluate how good the fit of
+[06:48] these two distributions is or
+[06:50] how close this distribution is to the
+[06:52] other so i'll call this the
+[06:54] goodness of the fit and for this we need
+[06:57] to find
+[06:58] a metric that is associated in
+[07:01] some sort of the distance between the q
+[07:05] and the p and that is of course the
+[07:07] callback library divergence
+[07:09] and if you haven't seen the video on the
+[07:10] callback lightbulb divergence i would
+[07:12] encourage you to go back and look at
+[07:15] this and look at this beautiful concept
+[07:17] of
+[07:17] finding a distance between two
+[07:20] distributions
+[07:21] so this is a distance between
+[07:24] two distributions and distance of course
+[07:27] means that we have identical
+[07:28] distributions
+[07:29] if the scale divergent is zero and
+[07:32] the higher this value is the further
+[07:34] they are apart
+[07:35] and our task is now to minimize
+[07:39] the kl and of course we are interested
+[07:42] in surrogate posterior so we
+[07:43] won't find situations where this kl is
+[07:46] zero but we still want to get
+[07:48] those surrogate which is the best so
+[07:50] let's encode this in an optimization
+[07:52] problem so we find
+[07:53] q star of vector set
+[07:56] as the arc minimum overall q
+[08:00] of set from a certain family of
+[08:03] distributions
+[08:04] so for instance think of gaussians over
+[08:06] the
+[08:07] kl divergence of q
+[08:10] of set to p offset under
+[08:13] x given by the data d and i will also
+[08:16] use a shorthand notation
+[08:18] for this one here so i will say that is
+[08:20] equal to
+[08:21] p offset given the data and this means
+[08:24] we have a random vector x
+[08:26] and we observe it as stator it's just a
+[08:28] convenient shorter notation
+[08:29] and let me also note this down that is a
+[08:32] family
+[08:32] of let's also call it simple
+[08:35] distributions
+[08:36] and of course simple does not mean that
+[08:37] we change the dimensionality
+[08:39] just means that it has a simple or
+[08:41] analytical functional form
+[08:42] of course we are still staying in the
+[08:44] same dimensionality of our latent
+[08:46] variable and just to
+[08:47] refresh the knowledge of the kl
+[08:49] divergence i just want to write it down
+[08:50] once
+[08:51] so the kl of q of set
+[08:55] and p of set given d is the
+[08:58] expectation over set distributed
+[09:02] according to
+[09:03] q offset over the logarithm
+[09:06] of q offset over
+[09:10] p offset given d and then closing
+[09:13] brackets for this one
+[09:14] and of course if we have a continuous
+[09:16] random variable then we can express the
+[09:18] expectation in terms of an integration
+[09:21] and then we get
+[09:22] both the integration from set 0 to set
+[09:26] capital d minus 1 over q offset
+[09:29] times the logarithm of q offset
+[09:33] over p offset a given d and then we
+[09:36] integrate from
+[09:37] set 0 all the way to set capital d minus
+[09:40] 1
+[09:41] and that's our kl divergence and within
+[09:43] this expression we've seen it now
+[09:44] multiple times so we have the queue of
+[09:46] set
+[09:47] and the cure set is just something that
+[09:49] we propose but
+[09:50] we also have the posterior in here and
+[09:52] recall the big
+[09:54] problem was that we don't have access to
+[09:56] the posterior because
+[09:57] if we had the posterior then we could of
+[09:59] course use the scale divergence in order
+[10:01] to fit
+[10:02] our surrogate but we don't have the
+[10:04] posterior so actually we
+[10:05] kind of created a new problem let us
+[10:07] note this down so
+[10:08] but we don't have the posterior also let
+[10:11] me put in a set smiley because
+[10:13] it's kind of a nice idea isn't it but we
+[10:15] can't do it because we don't have the
+[10:16] posterior
+[10:17] and the only thing we have is the joint
+[10:19] so we only
+[10:21] have the joint and the joint is p of
+[10:24] set and data of course this means that
+[10:27] we have an
+[10:27] x here but of course i fixed it with the
+[10:29] data and we also don't have the marginal
+[10:32] so we are kind of like lost but there is
+[10:34] again a remedy
+[10:36] and the remedy is to rearrange of course
+[10:38] this sounds
+[10:39] rather general but trust me on this we
+[10:42] will
+[10:42] reach a form where we can actually
+[10:45] compute something
+[10:46] and that's what we want to rewrite so
+[10:47] for this let us note down the kl
+[10:49] of q of set and the posterior
+[10:53] once again and we have the integration
+[10:56] over
+[10:56] all sets and i will use a shorthand
+[10:58] notation that is mathematically not
+[11:00] necessarily correct but i will combine
+[11:03] all the integrals into one and denote a
+[11:05] vector set in order to integrate over
+[11:07] set then we have our
+[11:09] q offset times the logarithm
+[11:12] of q offset over p
+[11:16] offset under the data and then closing
+[11:18] brackets for the logarithm
+[11:20] and then d vector set which also
+[11:22] mathematically i would say is not too
+[11:24] correct but it's just a shorthand
+[11:25] notation in order to simplify it and we
+[11:27] just
+[11:28] saw that we only have the joint
+[11:30] distribution
+[11:31] we don't have the posterior and we don't
+[11:33] even have the marginal but still
+[11:35] let us express the posterior in terms of
+[11:37] the joint and the marginal so we know
+[11:39] back from bayes rule that we did up here
+[11:42] that we could express the posterior as
+[11:45] well the joint that's just joined in the
+[11:47] numerator divided by the marginal right
+[11:50] so we have that p of
+[11:53] set a given d is well it's p
+[11:56] of set and d of course the underscore
+[11:59] for the vector
+[12:00] divided by p of d and here this was the
+[12:03] marginal then let's plug this
+[12:04] into the expression here and then we're
+[12:07] getting well again the integral over the
+[12:09] set vector
+[12:10] then q offset times the logarithm
+[12:13] of q offset times well then the
+[12:17] marginal because it's inverted so p of
+[12:20] d divided by p of
+[12:24] set and d then d set i'm closing
+[12:27] brackets for the logarithm here
+[12:29] well okay of course now we reformulate
+[12:31] our problem with another quantity that
+[12:32] we don't have but we can put
+[12:34] these quantity that we don't have
+[12:36] outside of the logarithm
+[12:38] and create two separate integrals and
+[12:40] the first integral will read
+[12:42] the integral over set of q offset
+[12:45] times the logarithm of q offset
+[12:49] over p of set and d
+[12:53] closing breaks for logarithm d set and
+[12:56] then
+[12:56] plus so because we can apply the
+[12:59] logarithms rule
+[13:00] and the numerator and then the product
+[13:02] gets into the sum of these two
+[13:04] quantities
+[13:05] and then we have the integral over set
+[13:07] of q offset
+[13:08] times the logarithm of p of d
+[13:12] of the marginal d set and then we again
+[13:15] see
+[13:15] on the left we have an expectation over
+[13:18] this quantity
+[13:19] and here we also have an expectation
+[13:21] over this quantity so let us note this
+[13:22] down
+[13:23] so here we have the expectation over set
+[13:26] distributed according to
+[13:27] q offset over the logarithm of q of set
+[13:32] over p offset and d
+[13:35] closing brackets and then closing
+[13:36] brackets for the expectation
+[13:38] plus another expectation again over the
+[13:41] same distributions
+[13:42] and here we have then the logarithm
+[13:46] of p of d and then we see we hear
+[13:49] we have a quantity that contains stuff
+[13:51] that we know
+[13:52] so we know and or we have access to the
+[13:55] functional form of the surrogate
+[13:57] and we have also access to the
+[13:59] functional form of the joint right
+[14:00] because we have the directed graphical
+[14:02] model
+[14:02] and here we have something that we don't
+[14:04] have access to
+[14:05] but that's of course a constant quantity
+[14:07] we will look at it in detail in a second
+[14:09] let us introduce another simplification
+[14:11] or rearrangement
+[14:13] because the expectation over something
+[14:15] that does not contain set
+[14:17] is just whatever the expectation was
+[14:19] taken over so we get
+[14:20] here the logarithm of
+[14:23] p of the and here we have
+[14:27] this quantity but i will change the
+[14:29] order in the logarithm or
+[14:31] in like a swap numerator and denominator
+[14:33] and then i have to
+[14:35] put out a minus in order to make this
+[14:37] like a valid change
+[14:38] so we have minus the expectation over
+[14:41] set
+[14:42] proportional to q offset over the
+[14:45] logarithm
+[14:46] of p offset and d divided
+[14:49] by q offset and then closing brackets
+[14:52] logarithm and closing brackets
+[14:53] expectation
+[14:54] let me introduce a shorthand notation
+[14:57] for this and i will call it
+[14:59] an capital l or like this calligraphic l
+[15:02] of q because it's a function dependent
+[15:05] on q
+[15:05] or a functional dependent on q and then
+[15:08] we can write down
+[15:09] our derivations in shorthand form and
+[15:12] recall we did all this
+[15:13] for the kl between the surrogate and the
+[15:16] true posterior
+[15:17] so we have the kl
+[15:20] is minus this l quantity
+[15:23] of q plus the logarithm
+[15:28] of p of d well of course recall that p
+[15:30] of the
+[15:31] well that is the marginal and the
+[15:34] marginal
+[15:34] well it's a probability so it will be
+[15:36] between 0 and 1.
+[15:37] if we apply the logarithm to the
+[15:39] marginal we get something that is called
+[15:42] the evidence and it's called evidence
+[15:45] because it's just the
+[15:46] log probability of the data and if we
+[15:48] apply the logarithm to something that is
+[15:50] in between 0 and 1
+[15:51] then we have a quantity that is negative
+[15:54] so this is
+[15:55] something negative or in other terms it
+[15:58] is
+[15:58] smaller equal to zero of course we don't
+[16:00] have access to it but
+[16:02] one thing we know for sure is that this
+[16:04] quantity
+[16:05] is fixed and it is fixed because we
+[16:08] observed
+[16:09] this data set and the probability of the
+[16:11] data set does not change
+[16:13] dependent on what kind of a surrogate
+[16:16] posterior we choose right
+[16:17] so it is a fixed quantity so for
+[16:20] instance it is
+[16:22] let's say minus 7.3 in whatever kind of
+[16:25] scenario we're talking about then we can
+[16:27] look at
+[16:28] the kl divergence we know the kl
+[16:32] is a distance so it has to be
+[16:35] something positive so let me also note
+[16:37] down it is the
+[16:38] distance between posterior and surrogate
+[16:42] well then if we have something positive
+[16:44] here
+[16:45] and something negative here and in order
+[16:48] to
+[16:48] fulfill this equation we need to also
+[16:51] have something negative here because
+[16:53] negative negative is positive
+[16:55] and then it can cancel with the negative
+[16:58] here
+[16:59] and create something positive over here
+[17:02] so
+[17:02] this has to be something negative
+[17:06] so it has to be smaller equal to zero
+[17:08] and because
+[17:09] in general we expect the kl diversions
+[17:12] to be non-zero because we choose
+[17:14] surrogate posteriors that are not our
+[17:17] trooper series
+[17:18] otherwise we wouldn't have to solve a
+[17:19] problem right so we expect
+[17:22] this to be smaller than this one because
+[17:25] if it is
+[17:25] smaller than this one then it is
+[17:27] negative and then we kind of get
+[17:29] our positive kl divergence so it has to
+[17:31] be
+[17:32] smaller than log p of d so it is
+[17:35] smaller than log p of d
+[17:38] and we said that this is the evidence
+[17:41] and
+[17:42] this one is smaller than the evidence
+[17:45] we call this the lower bound of the
+[17:48] evidence
+[17:49] or in other words the evidence lower
+[17:51] bound the elbow
+[17:52] so it is the evidence lower bound or in
+[17:56] other words
+[17:57] the elbow which is just a shorthand
+[17:58] notation for this let us note down the
+[18:00] elbow once again because it is really
+[18:02] important
+[18:02] so we have the elbow and the elbow over
+[18:05] q is defined as the expectation
+[18:09] over set over the set vector according
+[18:12] to
+[18:12] q offset over the logarithm
+[18:16] of the joint of p offset and d
+[18:19] over q offset which was our circuit and
+[18:22] that's a really important finding and
+[18:24] let me also note down the finding that
+[18:26] we did
+[18:26] here that the evidence lower bound is
+[18:29] always
+[18:30] smaller than the evidence but it can
+[18:32] also be equal to the evidence so
+[18:34] l of q is log
+[18:37] of p of d if and
+[18:40] only if the kl of our surrogate
+[18:45] to the true posterior is zero
+[18:48] or in other words if the surrogate is
+[18:50] our posterior right
+[18:52] so it will always be a lower bond but i
+[18:54] hope you get the message across because
+[18:56] let me go back to the original problem
+[18:58] which was
+[18:59] that we wanted to minimize the
+[19:02] kl divergence and we said we can't
+[19:06] compute the kl diverges because we don't
+[19:07] have the posterior
+[19:08] but now we have something that is
+[19:11] computable
+[19:13] and we know if it is zero and we know if
+[19:16] it is
+[19:16] zero then we have found the true
+[19:18] posterior which we want in general so we
+[19:21] want to maximize it because it is a
+[19:23] quantity smaller than zero
+[19:25] so let us note this down the task of
+[19:28] variational inference was that we said
+[19:32] that q star over the set vector
+[19:36] is the arg minimum overall q offset
+[19:40] from uh families for instance for the
+[19:42] gaussians
+[19:43] over the kl divergence of q offset
+[19:47] and the true posterior well then we said
+[19:50] we can't compute this
+[19:52] but this is equivalent to saying that
+[19:55] q star offset is
+[19:58] the arc maximum over
+[20:02] all q of sets from our family
+[20:05] over the evidence lower bound so once
+[20:07] again the
+[20:08] evidence lower bound is bounding our
+[20:11] evidence from below
+[20:12] and we know if it is equal to our
+[20:14] evidence then
+[20:16] we found the true posterior but we won't
+[20:19] find it in general so also let us note
+[20:21] this down here
+[20:22] that this is usually not achieved
+[20:26] in variational inference or shorthand vi
+[20:28] but we again want to find the best fit
+[20:31] and the best fit is than the minimum of
+[20:33] the kl
+[20:34] or the maximum of the lower bound
+[20:37] there is one last point and i want to
+[20:39] rearrange this
+[20:41] equation that we had here for the
+[20:43] evidence lower boat or for the elbow
+[20:45] so we had that the kl is minus the elbow
+[20:48] plus the lock marginal or the evidence
+[20:52] and this can be rearranged into that the
+[20:55] elbow of q
+[20:56] is the negative kl divergence
+[20:59] plus the logarithm of the
+[21:02] marginal or the evidence and that's also
+[21:05] an interesting finding that you might
+[21:06] see
+[21:06] in textbooks lastly i want to look at
+[21:09] some interactive plots in order to
+[21:11] emphasize what these quantities mean
+[21:13] here we have an interactive elbow plot
+[21:15] and we have a true posterior
+[21:17] which for the sake of simplicity we can
+[21:20] evaluate
+[21:20] and i painted it here in blue and we
+[21:24] have a surrogate posterior
+[21:25] as a normal distribution for which we
+[21:27] can change
+[21:28] the mu and the sigma so we can move it
+[21:31] around we have
+[21:32] access to the kl divergence of the true
+[21:35] posterior
+[21:36] and the surrogate and we have access to
+[21:38] the evidence
+[21:39] of the data because there are some
+[21:42] observed variables and here we are
+[21:44] looking at
+[21:44] the latent space and i calculated this
+[21:46] for you and now we can play around with
+[21:48] it a little bit first of all we see
+[21:50] the kl is a positive quantity and this
+[21:53] is this one here and we put a negative
+[21:56] sign in front of it as the
+[21:57] rearrangement we just did a couple of
+[21:59] seconds before then we have the
+[22:01] evidence and we know the evidence is a
+[22:03] negative quantity because it's the log
+[22:06] probability of something and by this we
+[22:08] also know that the elbow is a negative
+[22:10] quantity and we see the elbow
+[22:12] is negative kl plus evidence so in this
+[22:16] case
+[22:16] we have a kl of 1.01 and evidence of
+[22:20] minus 0.03 so we have an elbow of minus
+[22:23] 1.04 and our task is now
+[22:26] to minimize the elbow and we will see
+[22:29] that this is equivalent to maximizing
+[22:31] the kl
+[22:32] and for instance we see well the peak of
+[22:34] the true posterior is here so maybe
+[22:36] let's move our mu
+[22:37] around and get it to this position
+[22:40] approximately
+[22:41] and we see in our moving around the
+[22:44] evidence did not change right so it's
+[22:45] still 0.03 because the data did not
+[22:48] change
+[22:48] we just changed the surrogate posterior
+[22:51] but what happened is we
+[22:52] reduced the kl because it is now closer
+[22:56] to our true posterior
+[22:58] and we increased the elbow because
+[23:01] we are also closer to our true posterior
+[23:04] then of course we see
+[23:05] well probably with the standard
+[23:06] deviation we are not getting far
+[23:08] so let's increase it by a little bit
+[23:10] this also puts our
+[23:12] peak down and then we see again oh yeah
+[23:14] we we reduce our kl even further
+[23:16] and the elbow is increased again so
+[23:18] maybe we can go further
+[23:19] and let's see maybe let's try to play
+[23:21] around it's probably not
+[23:23] not too necessary to find the actual
+[23:26] optimum here but we see we we decreased
+[23:28] the kl by one order of magnitude here
+[23:31] and also our elbow is really close and
+[23:34] recall
+[23:35] that the elbow is the evidence if the kl
+[23:38] is zero
+[23:39] of course here we see that our true
+[23:40] posterior has more features than our
+[23:42] surrogate
+[23:43] so we won't be able to ever get the kl
+[23:46] of zero but that's still
+[23:47] quite a good result isn't it and we also
+[23:49] see if we increase
+[23:50] the sigma then even further we can go
+[23:53] down again we can down again
+[23:54] and then there will be the point of
+[23:55] inflection where we will be go going
+[23:57] back up again but because then we are
+[23:59] getting
+[24:00] further apart from our posterior again
+[24:02] okay i hope this introduction
+[24:04] made sense if there are any questions
+[24:05] left please write a comment i would be
+[24:07] happy to answer them and i hope you got
+[24:09] the main methods across that we are
+[24:10] doing
+[24:11] variational inference so we want to do
+[24:13] inference so we want to say something on
+[24:15] our latent variables
+[24:17] and we do it variationally which means
+[24:20] we do it over potential distributions
+[24:22] over functions
+[24:24] and that the elbow is a way to express
+[24:28] or to find an equal optimization problem
+[24:31] to minimizing the kl so maximizing the
+[24:34] elbow equals to minimizing
+[24:36] the kl then thanks for watching this
+[24:38] video if you enjoyed it then please
+[24:40] consider liking and subscribing
+[24:42] i would really appreciate this here you
+[24:43] will now see similar videos and i hope
+[24:45] to see you
+[24:46] next time
+[25:04] [Music]
+[25:05] you

@@ -1,0 +1,124 @@
+Generative AI Explained In 5 Minutes | What Is GenAI? | Introduction To Generative AI | Simplilearn
+
+Transcript with Timestamps
+
+[00:00] meet Emma a graphic designer working on
+[00:02] a new project one day her colleague
+[00:05] mentions a tool that helps create
+[00:07] designs images and text using AI
+[00:11] intrigued Emma wonders how AI can create
+[00:14] something from scratch her curiosity
+[00:17] grows and she decides to dive deeper
+[00:19] into this new technology called
+[00:21] generative AI generative AI refers to a
+[00:24] type of artificial intelligence designed
+[00:26] to create new content such as text
+[00:29] images music and videos unlike
+[00:32] traditional AI which analyzes or
+[00:34] categorizes data generative AI produces
+[00:37] original content based on patterns
+[00:39] learned from vast data sets essentially
+[00:43] it generates new unique material these
+[00:46] models are often trained on large
+[00:47] amounts of data and use sophisticated
+[00:50] algorithms to mimic human creativity
+[00:52] tools like chat GPT or DOL e can create
+[00:55] art write essays or simulate
+[00:58] conversations by generating output based
+[01:00] on user prompts generative AI has a wide
+[01:03] range of applications content creation
+[01:06] tools like gp4 generate text blog posts
+[01:10] stories and essays from simple prompts
+[01:13] Art and Design AI models such as doly
+[01:16] generates Unique Images and Designs
+[01:18] based on text descriptions transforming
+[01:21] creativity and art music and audio AI
+[01:25] can compose music or replicate voices
+[01:28] offering new possibilities for music
+[01:29] Physicians and audio
+[01:31] Engineers Healthcare generative AI
+[01:34] simulates disease progression or creates
+[01:36] synthetic Medical Data helping doctors
+[01:39] gain faster insights for research let's
+[01:42] take image generation as an example to
+[01:44] explain how generative AI
+[01:46] Works data collection and learning AI
+[01:50] models like Dolly are trained on large
+[01:52] data sets of images paired with text
+[01:55] descriptions these data sets teach the
+[01:57] model to recognize different objects
+[01:59] colors St Styles and how to associate
+[02:01] text with corresponding images the more
+[02:04] data the AI learns from the better it
+[02:06] can generate accurate and diverse images
+[02:08] based on user prompts neural networks
+[02:11] and
+[02:12] Transformers when Emma inputs a prompt
+[02:15] like a cat wearing sunglasses the
+[02:17] Transformer model processes the text
+[02:19] recognizing words like cat and
+[02:21] sunglasses and links them to images at
+[02:23] learn from during training Transformers
+[02:26] help the AI decide how to combine these
+[02:28] elements into a coherent image tokens
+[02:31] and context the text input such as a cat
+[02:35] wearing sunglasses is split into smaller
+[02:37] parts called tokens the AI processes
+[02:40] each token and understands their
+[02:42] relationship for instance it knows the
+[02:44] sunglasses should be placed on the cat
+[02:47] creating a contextually accurate image
+[02:50] feedback mechanism generative AI models
+[02:54] improve through feedback after
+[02:56] generating an image users provide
+[02:58] feedback on the accuracy or quality of
+[03:00] the output if Emma's generated image
+[03:02] shows the sunglasses floating beside the
+[03:04] cat she can mark it as incorrect the
+[03:07] model uses this feedback to improve
+[03:09] future image
+[03:10] Generations reinforcement learning
+[03:13] reinforcement learning further enhances
+[03:15] the ai's ability the model is rewarded
+[03:18] when it generates accurate images and
+[03:20] corrected when it makes mistakes for
+[03:22] example when Emma describes a Sunset and
+[03:25] the AI produces a vibrant Sunset image
+[03:28] it receives positive reinfor ment over
+[03:31] time this method refines the model's
+[03:33] ability to generate better images data
+[03:36] science and AI models data scientists
+[03:39] curate the training data and Define the
+[03:41] parameters that help the AI generate
+[03:43] accurate images the more varied the data
+[03:45] set the more versatile the AI becomes in
+[03:47] generating diverse types of content
+[03:50] Advanced models use billions of
+[03:52] parameters which are settings that guide
+[03:53] the AI in processing data and generating
+[03:56] outputs generating original content once
+[04:00] trained the model can generate original
+[04:02] images for example Emma might describe a
+[04:05] futuristic cityscape and the AI would
+[04:07] produce a unique image based on what it
+[04:09] learned the generated image isn't just a
+[04:12] copy of P data but an entirely New
+[04:15] Creation showcasing the ai's ability to
+[04:17] combine learn patterns and creativity
+[04:20] now let's have a quick fun quiz on what
+[04:22] we have learned so far what does
+[04:24] generative AI primarily do a analyze
+[04:28] data B B generate new content C store
+[04:33] data make sure to let us know your
+[04:35] answer in the comment section below for
+[04:37] a chance to win an Amazon voucher if you
+[04:40] are interested in learning AI then make
+[04:42] sure to check out Simply learns
+[04:43] generative AI program in association
+[04:45] with top universities we hope that you
+[04:48] enjoyed this video and found it
+[04:49] informative and exciting if yes then we
+[04:52] would appreciate a thumbs up a gentle
+[04:54] reminder to get subscribed to Simply
+[04:56] learn and click that Bell icon to never
+[04:59] miss any updates from Simply learn

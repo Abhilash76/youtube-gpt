@@ -1,0 +1,278 @@
+Autoencoders | Deep Learning Animated
+
+Transcript with Timestamps
+
+[00:10] Hey everyone, welcome back to Deepia!
+In this video you will learn how  
+[00:14] autoencoders transform complex data 
+into a simpler, more meaningful  
+[00:17] representation, called the latent space.
+With the first papers published 15 to 20  
+[00:23] years ago, autoencoders laid the foundation for 
+much of what we see in modern deep learning. 
+[00:29] They form the backbone of popular 
+architectures such as UNet, which are  
+[00:33] widely used in various image processing tasks.
+Even cutting-edge generative models,  
+[00:38] such as dall-e or midjourney, are built 
+on the principles of autoencoders. 
+[00:43] So let's start with the basics: what is 
+an autoencoder and how do we train it ?
+[00:50] An autoencoder is a type of 
+artificial neural network  
+[00:53] used to learn efficient representations of data.
+This means that the model tries to describe very  
+[00:59] large data, with as few features as possible.
+To put it more simply, imagine you're trying  
+[01:05] to describe someone to a friend.
+You could start by describing their  
+[01:08] hairstyle, their height, their 
+age or the colour of their skin. 
+[01:12] In the end, you might decide to describe someone 
+with just two numbers: their age and their height. 
+[01:17] It may not be the best representation, 
+but it is certainly a very compact one,  
+[01:21] as it is only two numbers.
+Autoencoders do essentially  
+[01:25] the same thing, but for different data.
+The basic architecture of an autoencoder  
+[01:30] consists of three main components: the encoder, 
+the bottleneck (or latent space), and the decoder. 
+[01:37] The encoder compresses the input data 
+into a 'latent-space' representation. 
+[01:42] This 'latent-space' is a low-dimensional 
+space that captures the essential features  
+[01:46] of the input data.
+The bottleneck layer,  
+[01:50] which is the smallest layer in the network, 
+holds this compressed representation. 
+[01:54] Finally, the decoder reconstructs the input data 
+from the compressed representation produced by  
+[01:59] the encoder and the bottleneck.
+Instead of this simple 4D data,  
+[02:04] an auto-encoder can also compress much 
+higher-dimensional data, such as tabular data. 
+[02:09] Another very common example is encoding 
+images, such as this picture of a rabbit. 
+[02:14] The encoder reduces the image to a few key 
+features, the bottleneck layer holds these  
+[02:19] features, and the decoder reconstructs the 
+image from these low dimensional features. 
+[02:24] Now let's see how we train such a network.
+[02:28] Training an autoencoder focuses on 
+minimising the difference between the  
+[02:32] original data and its reconstructed version.
+The goal is to improve the decoder's ability  
+[02:38] to accurately reconstruct the original 
+data from its compressed representation. 
+[02:43] At the same time, the encoder becomes 
+better at compressing the data in a way that  
+[02:47] preserves critical information, ensuring that the 
+original data can be effectively reconstructed. 
+[02:55] But how do we measure the 
+difference between two images? 
+[02:58] Well, the simplest way to compare two images 
+is to compare each pixel individually. 
+[03:03] For example, we can calculate the difference 
+between corresponding pixels, and then take  
+[03:07] the average of these differences.
+This method is called the mean  
+[03:13] squared error, or MSE.
+As the name indicates,  
+[03:17] each difference is squared to ensure all 
+values are positive and easier to work with. 
+[03:22] This gives us a single number, 
+representing how far apart two images are. 
+[03:27] During training, the autoencoder 
+"learns" by trying to reduce the  
+[03:30] mean squared error for each image it processes.
+We won't dive into the details of this process  
+[03:35] here, but Grant Sanderson from 3blue1brown has 
+an excellent series of videos on this topic. 
+[03:41] Here's a typical training 
+scenario: at the beginning,  
+[03:44] the reconstruction error is high because 
+the autoencoder's weights are randomly set. 
+[03:50] As training progresses, the error decreases, 
+and the autoencoder gets better at accurately  
+[03:56] recreating the original image, which 
+now looks almost identical to the input. 
+[04:01] Now that we have a basic understanding of 
+how an autoencoder learns to reconstruct  
+[04:05] images from their latent representation, 
+let's explore why we use such models.
+[04:11] As we already mentioned, one of the 
+main advantages of autoencoders is their  
+[04:15] ability to perform data dimensionality reduction.
+The dimension of the latent space is determined by  
+[04:21] the number of neurons in the bottleneck layer.
+For example, if there are 2 neurons in the  
+[04:26] bottleneck, the latent space is 2-dimensional.
+This allows us to visualise how each data point  
+[04:32] is encoded by treating the activation of 
+each neuron as a direction of a plane. 
+[04:37] If the first neuron is strongly 
+activated, the encoded representation  
+[04:40] will be on the right of this plot.
+And if the second neuron is activated,  
+[04:45] the latent representation will be at the top.
+Let's consider instances of the number  
+[04:49] seven and their latent representations.
+If the autoencoder is very well trained,  
+[04:56] each instance of this number will go 
+in the same region of the latent space. 
+[05:03] Now, if we encode instances of a 
+different class, for example the number 4,  
+[05:08] these instances will also form a cluster.
+Again in an ideal situation this cluster  
+[05:15] is supposed to be far apart from 
+the cluster of other classes. 
+[05:19] What happens is that during training, the 
+latent space becomes sort of 'organised',  
+[05:23] with each class occupying its own distinct region.
+Let's have a look at how the latent space  
+[05:28] actually evolves during training.
+We take a set of latent representations  
+[05:32] that will be plotted at each epoch.
+You can see that clusters start to form  
+[05:37] and latent representations move around 
+a lot during this early training phase. 
+[05:42] After a few epochs, as the training converges, the 
+latent representation does not change any more. 
+[05:50] Although not perfect, this organisation 
+of the latent space already makes  
+[05:55] it much easier to work with the data.
+For example, a classification algorithm  
+[05:59] such as nearest neighbours would probably 
+give a decent result on this representation.
+[06:06] An important choice in the design of autoencoders 
+is what we call the "latent dimension". 
+[06:11] This is basically the number of neurons 
+at the end of the bottleneck, and it is  
+[06:15] the most important part of the network.
+We call it the latent dimension because  
+[06:20] the data is encoded with as many 
+numbers as there are neurons. 
+[06:24] So if we have two neurons, 
+as we saw before, the data  
+[06:26] is encoded with two coordinates on a 2D plane.
+If we have three neurons, the data is encoded  
+[06:32] with three coordinates in 3D space.
+And if we have even more neurons,  
+[06:36] the data will be encoded in 4D, 5D 
+or even higher dimensional spaces.
+[06:43] In the following examples, we trained 
+each network exactly the same way,  
+[06:46] changing only the latent dimension.
+As you can see, if the latent space  
+[06:51] is too small, the autoencoder may struggle 
+to identify essential features of the data. 
+[06:57] This ultimately results in 
+poor reconstruction quality,  
+[07:00] even if the network is trained for a long time.
+Even with a 2D latent space, the reconstructions  
+[07:05] are not always accurate: as 
+you can see this 4 becomes a 9. 
+[07:09] But if we take a larger latent 
+dimension, for instance 9, then the  
+[07:11] number is reconstructed correctly.
+You might ask why we care so much about  
+[07:16] the quality of the reconstruction when all 
+we want is a nice latent space to work with. 
+[07:22] The thing is, poor reconstruction quality often 
+translates into poor latent space organisation.
+[07:30] With a 2D latent space, we saw that the 
+reconstructions were not that good and the  
+[07:34] latent space was not very organised.
+We can see some clusters, but they  
+[07:39] overlap and are all in the same region of 
+space, and some of them are very sparse:  
+[07:43] for instance, the cluster of zeros.
+If we switch to a 5D latent space, we can  
+[07:48] see that the clusters are much more separated.
+We can clearly see that the ones are mainly  
+[07:54] in the upper right corner of the space, 
+while the twos are roughly in the middle,  
+[07:58] and the sevens slightly to the right.
+By the way, how is it that we can  
+[08:03] visualise such a 5D space with a 2D plot?
+Simply put, we project the latent space to  
+[08:09] keep only the 2 most important dimensions.
+If you want to know more about how we  
+[08:14] visualise high-dimensional latent spaces, 
+remember to stay tuned for the next video. 
+[08:20] Now back to the topic.
+Even with a 5D latent space we still  
+[08:23] have relatively sparse and diffuse clusters.
+For example, this image of the number 2 is  
+[08:28] encoded near a cluster of nines, and 
+is therefore reconstructed as a 9 ! 
+[08:34] This image of the number 3 is also poorly encoded, 
+resulting in it being reconstructed as an 8. 
+[08:41] Now that we understand how autoencoders 
+work, with the latent dimension being  
+[08:45] one of their key parameters, let's 
+look at some real life applications.
+[08:52] So far we have only seen examples of 
+autoencoders trained on handwritten digits,  
+[08:56] but of course we can perform classification 
+tasks on any other type of data. 
+[09:01] Suppose we're in a busy hospital that 
+sees millions of patients a year,  
+[09:04] and probably performs hundreds of thousands MRIs.
+We have access to the brain MRIs of several  
+[09:10] patients, but the information 
+about their gender has been lost  
+[09:14] in the processing of their medical data.
+But for many conditions, it is very useful  
+[09:19] to know a patient's gender, in conjunction 
+with other information such as their age. 
+[09:24] And it's very difficult to tell the 
+gender of a patient just by looking  
+[09:27] at an MRI scan of their brain: in fact, 
+even experienced practitioners can't do it. 
+[09:33] Fortunately, we can actually train an autoencoder 
+to recognise a patient's gender from their brain  
+[09:38] MRI alone, based on their latent representation.
+The autoencoder will represent the brain MRIs in  
+[09:46] a lower dimensional space, where it is easier 
+for us to identify the gender of the patient. 
+[09:52] Here we can clearly distinguish 
+the men and the women based on  
+[09:54] the latent representation of their brain.
+While autoencoders are used everywhere,  
+[09:59] they are rarely used in this simple 
+form: let's see where they're limited.
+[10:05] Autoencoders' greatest strength is also 
+their greatest limitation: latent space. 
+[10:10] If we rely only on the reconstruction loss of 
+the autoencoder to organise the latent space,  
+[10:14] we often end up with passable representations.
+As we have already seen with hand-written digits,  
+[10:20] clusters are not as well defined 
+as we would like them to be. 
+[10:24] Another noticeable problem is that when 
+we take two points in the latent space,  
+[10:28] we expect that if we take a point in the middle,  
+[10:31] it will be a mixture of the other two.
+Unfortunately, this is not the case:  
+[10:36] taking such a middle point results in 
+nonsense for most of the intermediate points. 
+[10:41] Here the interpolation of a 0 and a 6 is a 5, 
+while there are no encoded fives anywhere near. 
+[10:51] Finally, autoencoders also 
+learn many irrelevant features. 
+[10:54] So much so that if we add a bit of 
+noise to the input, the autoencoder  
+[10:58] won't be able to reconstruct it at all.
+Here you can see that the reconstruction is  
+[11:03] getting so bad that the numbers are actually 
+changing, with a 4 and a 5 becoming a 9. 
+[11:10] This is why most modern implementations of 
+autoencoders regularise the latent space. 
+[11:15] The most famous type of regularised autoencoder 
+is called a 'variational autoencoder',  
+[11:20] or VAE, which will be discussed in 
+detail in one of the next videos.
+[11:26] Thank you so much for watching this video !
+If you enjoyed it, please like and subscribe  

@@ -1,0 +1,137 @@
+What are Autoregressive (AR) Models
+
+Transcript with Timestamps
+
+[00:00] finally our series on time series gets
+[00:03] back to the idea of modeling
+[00:05] specifically today what are Auto
+[00:07] regressive also known as AR models well
+[00:11] first of all let's remember stationarity
+[00:12] we can't have independence in time
+[00:15] series but we still want consistency and
+[00:17] that means that we want the distribution
+[00:18] to depend only on differences in time
+[00:21] not on locations in time of course if
+[00:24] you're not quite sure about stationarity
+[00:25] you can always go back and watch my
+[00:27] video on stationarity the reason the
+[00:29] stationarity is so important is there
+[00:31] are entire classes of models that depend
+[00:34] on stationarity and these models are
+[00:36] well called stationary models I know
+[00:38] very complicated and one of the most
+[00:40] popular of these stationary models are
+[00:42] called Auto regressive models Auto
+[00:45] regressive models try to forecast a
+[00:47] series based solely on the past values
+[00:49] of the series we call these lags a model
+[00:53] that only depends on the previous value
+[00:56] of the previous lag or one lag in the
+[00:58] past is called an AR model of order 1 or
+[01:02] an AR 1 model as you can see here so we
+[01:06] have the target variable Y that we're
+[01:07] still interested in but we're
+[01:09] essentially using previous values of Y
+[01:12] to predict this target variable Y you
+[01:14] can imagine is like a lagged target and
+[01:16] then of course it's not going to be a
+[01:18] perfect prediction so we have some error
+[01:19] as well now there's an intercept there's
+[01:22] a coefficient we'll deal with the
+[01:24] coefficient in a little bit but let's
+[01:26] talk a little bit more about this lagged
+[01:27] target maybe you're having a hard time
+[01:29] conceptualizing this so let's zoom in a
+[01:31] little bit more on my sales chart on the
+[01:33] right hand side again let's say I want
+[01:36] to forecast my sales on a weekly basis
+[01:39] well how can I use the previous week to
+[01:42] be able to help me out well let's take a
+[01:43] look at one observation this one
+[01:46] observation would essentially be looking
+[01:49] back at the previous week sales to try
+[01:51] and predict it so again I'm using a
+[01:53] previous week to predict a current week
+[01:55] now of course I'm not going to do this
+[01:57] for just one observation I'm doing this
+[01:59] for all of the observations in my
+[02:01] dataset every observation is looking
+[02:03] back at the week before it of course
+[02:05] except for the very first observation
+[02:07] it's lonely it doesn't have one before
+[02:08] it but don't worry first observation
+[02:11] you'll be important just wait
+[02:13] and so if you keep doing this whole idea
+[02:16] of recursion where you have that today
+[02:18] depends on the time period before and
+[02:20] that depends on the time period before
+[02:22] that and that depends on the time period
+[02:24] before that you can sort of recursively
+[02:26] plug this in in a mathematical way which
+[02:29] is why these are called long memory
+[02:31] models
+[02:31] let me show you what I mean
+[02:33] mathematically so let's say that today
+[02:35] YT depends on YT minus 1 well that means
+[02:39] that YT minus 1 depends on YT minus 2
+[02:42] and so I can actually plug these
+[02:45] equations into each other and show in a
+[02:46] roundabout way that YT depends on YT
+[02:50] minus 2 with a little bit extra error
+[02:53] and a little bit different of an
+[02:54] intercept I still have that YT minus 2
+[02:57] is somewhat influential on YT ok well if
+[03:01] I know that YT is dependent on YT minus
+[03:03] 2 let's think about YT minus 2
+[03:06] well YT minus 2 depends on YT minus 3
+[03:08] again
+[03:09] time to repeat the process I can plug
+[03:11] these two equations into each other and
+[03:13] again in a roundabout way show that YT
+[03:15] minus 3 has some minor effect on YT
+[03:18] today again with a little bit extra
+[03:20] error and a little bit different of an
+[03:22] intercept of course I can repeat this
+[03:24] over and over and over and over again
+[03:27] in fact I can sort of do this all the
+[03:29] way till we get back to the very very
+[03:31] first observation essentially plug in a
+[03:34] bunch of math and you can get what you
+[03:36] have here at the very bottom of the
+[03:37] screen and if you take a look the first
+[03:41] observation does matter
+[03:42] the first observation in a roundabout
+[03:45] way still has a small effect on what's
+[03:47] going on today now the whole point of
+[03:50] stationarity is that this effect goes
+[03:52] away so the effect of these shocks that
+[03:55] happened long ago will have only a
+[03:57] little effect on today if that
+[03:59] coefficient in absolute value is less
+[04:01] than 1
+[04:02] again this is why these are called long
+[04:05] memory models is the effect doesn't ever
+[04:07] fully go away but the effect does
+[04:10] dissipate over time hence the idea of
+[04:13] stationarity now of course why just stop
+[04:16] with only having one like you could
+[04:18] easily have two lags where if looking at
+[04:21] today's weeks in sales I can look back
+[04:23] at the previous two weeks to try and
+[04:25] predict this week in sales
+[04:27] of course again I'm not doing this for
+[04:29] one observation I'm doing this for all
+[04:30] of the observations but if you try and
+[04:32] draw this out it gets a little bit
+[04:33] complicated and again why stop with two
+[04:36] why not have as many different lags in
+[04:38] the model that you'd like so again you
+[04:40] can go up to P lags into the past these
+[04:43] are called ARP models and these models
+[04:45] can get rather large if only they had a
+[04:48] counterpart to be able to help them out
+[04:50] oh you'll have to turn in to our next
+[04:52] video to figure that one out but for
+[04:54] right now what are auto regressive
+[04:56] models those are Auto regressive models
+[04:58] in under five minutes

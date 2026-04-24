@@ -1,0 +1,280 @@
+Simple Explanation of AutoEncoders
+
+Transcript with Timestamps
+
+[00:00] as you know if you want to apply machine
+[00:02] learning you need data and often the
+[00:04] more the better if you want to build a
+[00:07] classifier like a cat detector you need
+[00:09] a label which images have cats in them
+[00:11] if you want to find fraudulent credit
+[00:13] card transactions you need to label
+[00:15] which transactions had fraud but often
+[00:18] labels are hard to get because they're
+[00:20] expensive and they require human to
+[00:22] review but you might have a lot of
+[00:24] unlabeled data so maybe you have a lot
+[00:26] of credit card transactions but you
+[00:28] don't know which ones are fraud and
+[00:29] which are not and it would be great if
+[00:31] you could somehow leverage this data to
+[00:33] learn something interesting that will
+[00:34] help you solve other problems that you
+[00:36] care about this is exactly what
+[00:38] autoencoders are there unsupervised
+[00:40] learning process that lets you take
+[00:42] advantage of your unlabeled data and
+[00:44] learn interesting things about the
+[00:45] structure of that data that's often
+[00:47] useful in other context so for instance
+[00:50] you can build a better classifier by
+[00:52] using autoencoders as a feature
+[00:53] extractor or if you don't have any
+[00:55] labels at all you can use the auto
+[00:57] encoders to flag anomalies that might
+[01:00] get your labeling process started you
+[01:02] can even use them to fill in missing
+[01:04] values in this video I want to talk all
+[01:06] about auto-encoders how they're
+[01:08] structured how they learn and how you
+[01:10] can put them to use I also want to talk
+[01:12] about an interesting and kind of
+[01:14] lesser-known variant called denoising
+[01:16] auto-encoders so let's dive in
+[01:19] [Music]
+[01:36] in their simplest form an autoencoder is
+[01:39] a neural network that attempts to do two
+[01:41] things first it compresses its input
+[01:44] data into a lower dimension then it
+[01:47] tries to use this lower dimensional
+[01:49] representation of the data to recreate
+[01:51] the original input the difference
+[01:54] between the attempted recreation and the
+[01:56] original input is called the
+[01:57] reconstruction error by training the
+[02:00] network to minimize this reconstruction
+[02:02] error on your data set the network
+[02:04] learns to exploit the natural structure
+[02:06] in your data to find an efficient lower
+[02:09] dimensional representation let's dig
+[02:12] deeper into each part the left part of
+[02:15] the network is called the encoder its
+[02:17] job is to transform the original input
+[02:19] into a lower dimensional representation
+[02:22] that sounds pretty complicated so let's
+[02:24] take a couple minutes and discuss what
+[02:26] it means to project something down into
+[02:28] a lower dimensional representation and
+[02:29] build some intuition for why this is a
+[02:31] reasonable thing to do the idea behind
+[02:35] this is fairly simple imagine do two
+[02:37] inputs our city and country maybe you
+[02:40] have Tokyo Japan Paris France and so on
+[02:43] even though it's conceptually possible
+[02:45] to have Hong Kong Spain we don't
+[02:47] actually see this in the real data and
+[02:49] this is because real data often lies on
+[02:51] a lower dimensional subspace within the
+[02:54] full dimensionality of the input the
+[02:55] point is the real data isn't fully
+[02:58] spread out across all possibilities but
+[03:00] actually makes up a small fraction of
+[03:02] the possible space for instance here's
+[03:05] an example points that are evenly spread
+[03:07] throughout three-dimensional space
+[03:09] there's no structure here because the
+[03:11] data is totally random and there's no
+[03:13] way to describe the location of all of
+[03:15] these points using fewer than three
+[03:17] numbers per point without losing
+[03:19] information because this data truly
+[03:21] spans all three dimensions in practice
+[03:25] our data has structure which is another
+[03:27] way of saying that it's constrained
+[03:29] remember Hong Kong Spain is conceptually
+[03:31] possible but we won't ever see it in the
+[03:34] real data so that part of the space is
+[03:36] unoccupied here's an example of
+[03:38] constrain data in the same space we can
+[03:41] still describe each point with three
+[03:43] numbers but this is somehow inefficient
+[03:45] since the real data is constrained
+[03:47] to a one-dimensional spiral the trick
+[03:50] would then be to find a new coordinate
+[03:52] system where the constraints of the
+[03:54] spiral are ingrained into it and then we
+[03:56] would only need a single number to
+[03:58] describe any point without information
+[04:00] loss for this spiral example we can
+[04:03] represent it exactly here are the
+[04:05] equations that translate the single
+[04:07] angular dimension theta into the
+[04:09] original three dimensions for any
+[04:11] particular point on the spiral I can
+[04:13] choose to describe it with a single
+[04:14] number theta or I can describe it with
+[04:17] three numbers XY and Z it just depends
+[04:20] on the coordinate system I'm using so
+[04:22] what does all this have to do with
+[04:23] autoencoders well the encoder
+[04:27] approximates the function that map's the
+[04:29] data from its full input space into a
+[04:32] lower dimensional coordinate system that
+[04:34] takes advantage of the structure in our
+[04:35] data so this section was pretty dense
+[04:38] and mathy so let me quickly summarize
+[04:40] our real data is not random but instead
+[04:44] it has structure and that structure
+[04:46] means we don't need every part of our
+[04:48] full input space to represent our data
+[04:50] and it's the encoders job to map it from
+[04:53] that full input space into a meaningful
+[04:55] lower dimension so now let's move on to
+[04:59] the decoder the decoder attempts to
+[05:02] recreate the original input using the
+[05:05] output of the encoder in other words it
+[05:08] tries to reverse the encoding process
+[05:10] this is interesting because it's trying
+[05:12] to recreate a higher dimensional thing
+[05:14] using a lower dimensional thing this is
+[05:16] a bit like trying to build a house by
+[05:18] looking at a picture of one we mentioned
+[05:21] before that your true data can likely be
+[05:23] described using fewer dimensions than
+[05:25] the original input space but the point
+[05:27] of the middle layer in an auto encoder
+[05:29] is to make it even smaller than that
+[05:31] this forces information loss which is
+[05:34] key to this whole process working by
+[05:37] making it so that the decoder has
+[05:38] imperfect information and training the
+[05:40] whole network to minimize the
+[05:42] reconstruction error we forced the
+[05:44] encoder and decoder to work together to
+[05:47] find the most efficient way to condense
+[05:48] the input data into a lower dimension if
+[05:52] we did not have information lost between
+[05:54] the encoder and decoder then the network
+[05:56] could simply learn to multiply the input
+[05:58] by one and get a perfect reconstruction
+[06:00] and this would obviously be a useless
+[06:02] solution we don't need a fancy neural
+[06:04] network just to multiply something by
+[06:06] one the only way auto-encoders work is
+[06:09] by enforcing this information loss with
+[06:12] the network bottleneck but this means we
+[06:15] need to tune the architecture of our
+[06:16] network so that the inner dimension is
+[06:18] less then the dimension needed to
+[06:20] express our data but how could you know
+[06:23] that in advance what we really want is a
+[06:27] way of learning these representations
+[06:28] using whatever architecture we want
+[06:30] without the fear that the network's
+[06:32] gonna learn this trivial solution of
+[06:34] multiplying by one and luckily there's a
+[06:37] clever tweak we can make that avoids
+[06:39] that problem and this gets us into the
+[06:41] world of denoising auto-encoders the
+[06:44] idea is this before you pass the input
+[06:46] into the network you add noise to it so
+[06:49] if it's an image maybe you add blur then
+[06:52] you ask the network to learn how to
+[06:53] erase the noise that you just added and
+[06:55] reconstruct the original input so the
+[06:58] reconstruction error is slightly
+[07:00] modified so that the input to the
+[07:02] encoder now has a noise term added this
+[07:05] means the network multiplying the input
+[07:07] by one is no longer a good solution
+[07:09] because this would just return the
+[07:11] distorted image and still have a large
+[07:13] reconstruction error
+[07:14] this is called a denoising auto-encoder
+[07:17] because it attempts to remove the noise
+[07:19] that we added artificially to the raw
+[07:21] data now that we have an understanding
+[07:23] of how auto-encoders are structured and
+[07:26] learned let's talk about some ways you
+[07:27] can use them the first is as a feature
+[07:30] extractor in this case after we complete
+[07:33] the training process we chop off and
+[07:35] throw away the decoder and just use the
+[07:37] encoder part of the network the encoder
+[07:40] then transforms our raw data into this
+[07:43] new coordinate system and if you
+[07:44] visualize the data in this new space
+[07:46] you'll find that similar records are
+[07:48] clustered together here's a plot of
+[07:51] embeddings of credit card transactions
+[07:53] learned with a denoising auto-encoder if
+[07:56] you look at the raw data of one of these
+[07:57] clusters you'll notice that they have
+[07:59] almost identical features this should
+[08:01] make for an easier job for the
+[08:03] classifier as the auto encoder did a lot
+[08:05] of the heavy lifting and therefore your
+[08:07] smaller data set will likely take you
+[08:09] further this can be useful even if
+[08:13] you're not building a classifier
+[08:14] for instance if you had a particular
+[08:16] record of interest you can find its
+[08:18] nearest neighbors in this space a
+[08:19] running clustering algorithm to find
+[08:21] other records that are similar this is
+[08:24] likely to be more effective than
+[08:26] clustering on the raw input features
+[08:28] since the network has learned about this
+[08:30] structure in your data this is
+[08:32] particularly useful if your data is
+[08:34] categorical in nature as in this example
+[08:37] since it's not obvious how you search
+[08:38] for nearest neighbors when your inputs
+[08:40] aren't numeric and if you don't have any
+[08:44] labels at all you can still use auto
+[08:45] encoders for anomaly detection in this
+[08:49] case you keep the full auto encoder and
+[08:51] use the reconstruction error as the
+[08:53] anomaly score to grasp of this consider
+[08:56] our previous example of a
+[08:58] one-dimensional spiral in 3d space what
+[09:01] happens if we train our auto encoder on
+[09:03] these spiral points with an input an
+[09:06] anomalous random point that's far from
+[09:08] the spiral since our auto encoder who
+[09:11] would have only seen spiral points the
+[09:13] decoder would likely return a point
+[09:14] that's close to the spiral even though
+[09:16] the input point was far from it so for
+[09:19] anomalous input points that are far from
+[09:21] the spiral we expect a large
+[09:22] reconstruction error since the auto
+[09:24] encoder just can't represent it well
+[09:26] this is why the reconstruction error can
+[09:29] be a proxy for an anomaly score the
+[09:32] nature of an anomaly is that it doesn't
+[09:34] respect the normal structure of the data
+[09:36] and this is where the auto encoder will
+[09:38] have a hard time finally you can use
+[09:40] denoising auto-encoders for missing
+[09:42] value imputation as an example let's say
+[09:45] you have these four rows of data where
+[09:47] the first three are complete but the
+[09:49] last record has a missing value the idea
+[09:53] is that we train the network by randomly
+[09:55] replacing true data with missing data
+[09:57] and ask it to learn to erase the noise
+[09:59] then once the model is trained we can
+[10:02] pass in inputs that actually have
+[10:04] missing fields and use the network to
+[10:06] predict what the missing values are
+[10:07] likely to be we can then use these
+[10:10] predictions to replace our actual
+[10:12] missing values I hope this video has
+[10:14] given you an intuition for what
+[10:16] auto-encoders are how they're learned
+[10:18] and what you might use them for if you'd
+[10:21] like more content like this you can
+[10:23] subscribe to my mailing lists at blog
+[10:25] Zack
+[10:26] jost calm

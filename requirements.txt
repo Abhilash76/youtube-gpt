@@ -15,8 +15,9 @@ faiss-cpu
 accelerate
 bitsandbytes
 huggingface-hub
-pinecone-client
+pinecone>=6.0.0,<8.0.0
 cohere
+neo4j
 groq
 
 # LangChain

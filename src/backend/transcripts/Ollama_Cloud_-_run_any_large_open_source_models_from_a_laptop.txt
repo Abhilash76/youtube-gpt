@@ -1,0 +1,168 @@
+Ollama Cloud - run any large open source models from a laptop
+
+Transcript with Timestamps
+
+[00:00] Ola has just come up with Olama cloud.
+[00:02] You can see the link for cloud here and
+[00:05] they're saying that cloud models are now
+[00:07] available in Olama. If I click on cloud,
+[00:10] the cloud is in cloud preview and we can
+[00:13] run large models faster using Olama's
+[00:15] cloud and the advantages is that speed
+[00:18] up model inference. We can run large
+[00:20] models and there's also privacy there
+[00:22] and we also save battery life because we
+[00:25] are not running a heavy model on your
+[00:28] laptop. And if we click on cloud models
+[00:30] and the cloud models are now in preview,
+[00:32] letting you run large models with fast
+[00:35] datacentric grade hardware. You can keep
+[00:37] using your local tools while running
+[00:39] large models that wouldn't fit on a
+[00:41] personal computer. It's the same Olama
+[00:43] experience is now seamless across both
+[00:45] local and in the cloud integrated with
+[00:48] the existing tools you already use. So
+[00:51] these are the four models that are
+[00:53] currently available. We have the quen
+[00:54] model, we have the two GPT OSS models
+[00:57] and we have the DeepSseek model that are
+[00:59] currently available in the cloud. So
+[01:01] let's go ahead and see how we can get
+[01:03] started with this one. Previously
+[01:05] whenever we wanted to run any model,
+[01:07] what we do is we go under models, we
+[01:09] choose the model. Let's say it's GPToss
+[01:11] and under that we run this command.
+[01:13] Olama run GPToss for example 20 billion.
+[01:17] This command pulls the model locally and
+[01:20] runs the model locally. Now we want to
+[01:22] run it in the cloud. So the command for
+[01:24] that is GPD OSS20B
+[01:27] cloud. But before we do that, we need to
+[01:29] upgrade Olama. So if we go under the
+[01:32] GitHub repository under Mac, click on
+[01:35] download. Or if you're on Linux, you
+[01:37] could do coin install.sh install the
+[01:39] latest version. So for me, it's
+[01:41] downloaded the DMG file. So I'm just
+[01:43] going to install the latest version of
+[01:45] Olama. So if I open that, I just have to
+[01:48] drag and drop into the applications. I
+[01:51] will have to replace it. I've got the
+[01:53] latest version of Olama on my machine.
+[01:56] So if I now check the Olama version, the
+[01:58] version that I've got on the Mac is
+[02:00] 0.12. Previously it was 0.9. Now that we
+[02:04] have the latest version of Olama, we
+[02:06] should be able to run say the GPT OSS
+[02:09] model. So if I want to run any cloud
+[02:12] model, I would just say the model hyphen
+[02:14] cloud and I should be able to run the
+[02:16] model on the cloud. But running any
+[02:19] model on the cloud needs login. Like
+[02:21] they have mentioned here, Olama's cloud
+[02:23] models require an account on olama.com.
+[02:26] To sign in or create an account, run
+[02:27] Olama sign in. So if I run Olama signin,
+[02:30] then it's asking me to navigate to this
+[02:32] link and I'm going to login with my
+[02:34] credentials. So I've logged in as AI
+[02:37] bytes. Now if I go on the top right
+[02:40] settings, go to keys and I should be
+[02:42] able to add an API key. Let me just do
+[02:45] that. I'm going to call AI bytes and I'm
+[02:47] just going to generate API key. So I can
+[02:50] use this one to do anything on the
+[02:52] cloud. Let's try to run the cloud model.
+[02:55] Now it's asking me to sign in. So I'm
+[02:57] just going to click on this link. Go to
+[02:59] sign in. And it says connected device
+[03:02] the MacBook with AI bytes. The device is
+[03:04] will be paired with your account. So I'm
+[03:06] just going to click on connect. Device
+[03:08] connected successfully. So if I now try
+[03:11] to run it again, we're getting a
+[03:13] response. I'm just a bundle of code. So
+[03:15] I don't have feelings in the way you do
+[03:16] but I'm running smoothly and ready to
+[03:18] help. So that was running the model on
+[03:20] the cloud. We also have the option to
+[03:22] run using Python. So let's see how we
+[03:25] can run a simple Python client. So to
+[03:27] run it with Python, I've created this
+[03:29] directory Olama demo. And I'm going to
+[03:31] now create a cond environment. Create
+[03:34] minus nama demo. Python let's say 3.12.
+[03:38] And I'm going to activate the cond
+[03:40] environment we just created. Now that
+[03:41] it's activated, I'm just going to create
+[03:43] a file say demo.py. So we need to
+[03:46] install as well. So I'm just going to do
+[03:48] pip install lama. So it says installing
+[03:52] collected packages. And there's Olama
+[03:54] there. And we can see that it
+[03:55] successfully installed everything. So
+[03:56] I'm just going to clear the screen and
+[03:58] I'm going to start editing the demo.py
+[04:00] we just created over here. If I just say
+[04:03] from ola import client and if I create a
+[04:06] client which is client of host is
+[04:10] olama.com and the headers is
+[04:14] authorization that's my API key which I
+[04:16] will be deleting before publishing this
+[04:18] video. So once we create the client, we
+[04:21] need to create the messages which is
+[04:24] going to be the role is user and the
+[04:27] content is why is the sky blue and we
+[04:31] get the response. So we're going to
+[04:33] print part of the response. So I'm just
+[04:34] going to say for part in client dot chat
+[04:38] we're going to choose the GPT OSS 120
+[04:42] billion parameter model and we're going
+[04:44] to say messages is the messages we have
+[04:48] created and stream is true which is
+[04:51] going to stream the message and we're
+[04:53] just going to print the response that
+[04:54] you get which is part of the message of
+[04:58] content and is nothing and flush is
+[05:00] true. So let's run this and see what
+[05:03] happens. So I've now come back to the
+[05:05] terminal. I'm just going to run this
+[05:06] demo.py file. I'm just going to say
+[05:08] python demo.py. And we can see that it's
+[05:12] asking the question and it's getting the
+[05:14] response the sky looks blue because of
+[05:15] phenomenon called rail is scattering.
+[05:17] And we're getting the response from the
+[05:19] GPT OSS 120 billion parameter models. So
+[05:23] that was by using the Olama client. The
+[05:26] a different way in which we could do is
+[05:27] we could straight away pull the model to
+[05:29] the cloud itself. For example, in the
+[05:31] terminal, I can say, "Oama, pull the
+[05:33] model hyphen cloud." So, if I run that,
+[05:35] it's pulling the model and it's now
+[05:37] available in the cloud. So, let's try to
+[05:39] use this model in Python. To to now use
+[05:42] it in Python, I can say import and chat
+[05:46] and provide the model which is the GP
+[05:49] OSS 20 billion cloud. And again, I give
+[05:52] the same question and I print the
+[05:55] content from the response. Let's see
+[05:57] what this one gives. So if I now run
+[06:00] python demo.py, we can see that we're
+[06:03] getting the same response. The sky looks
+[06:05] blue because of the way it's atmosphere
+[06:07] scatters light and we're getting the
+[06:09] response again. So this is another way
+[06:11] of using any model in the cloud using in
+[06:14] Python rather than pulling it locally.
+[06:17] So with Olama, we can now run things on
+[06:20] cloud. Even though it's on preview, I'm
+[06:23] sure this is going to blow up. And we
+[06:25] also need to note that there's a
+[06:26] subscription fee of $20 per month if you
+[06:29] want to run large model faster. So with
+[06:31] that, I'm signing off and I will see you
+[06:33] in my next video. They cap.

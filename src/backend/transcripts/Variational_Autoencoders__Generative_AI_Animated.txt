@@ -1,0 +1,475 @@
+Variational Autoencoders | Generative AI Animated
+
+Transcript with Timestamps
+
+[00:00] Generative Artificial Intelligence is a 
+buzzword you'll hear everywhere these days,  
+[00:03] but its true meaning is often misunderstood.
+Many people mistakenly think it's a completely  
+[00:09] new type of AI, often confusing it with 
+Chat-GPT or other large language models. 
+[00:15] In fact, generative AI differs from traditional 
+AI in that it doesn't process existing data,  
+[00:20] but is used to create new data from scratch.
+In this video, we're going back to the roots  
+[00:26] of generative AI to explore one of the fundamental 
+techniques for creating never-before-seen images:  
+[00:32] Variational Autoencoders, or VAEs.
+These models have not only laid  
+[00:38] the groundwork for understanding generative 
+processes, but are also key components in modern  
+[00:43] architectures such as Stable Diffusion.
+But why do we even need such models? 
+[00:49] Why can't traditional deep learning 
+models, like standard autoencoders,  
+[00:52] generate new images on their own?
+Let's dive in and find out.
+[01:06] Autoencoders are based on a simple but powerful 
+concept: they take data, compress it into  
+[01:12] a low-dimensional representation, and then 
+reconstruct it back into its original form. 
+[01:18] While an image usually 
+contains millions of values,  
+[01:20] the low-dimensional representation is 
+usually a vector of 10 to 100 numbers. 
+[01:25] These representations live in a space 
+with a more compact and interpretable  
+[01:29] form, usually called the latent space.
+If you're not familiar with these concepts,  
+[01:34] check out the previous video where 
+we cover the basics of autoencoders. 
+[01:39] Now if we have a trained autoencoder capable 
+of reconstructing images from their latent  
+[01:43] representations, a natural idea for generating new 
+data would be to randomly sample points from this  
+[01:49] latent space and run them through the decoder.
+But here's the catch: in most cases,  
+[01:54] this approach will not produce useful 
+results-mainly because the latent space  
+[01:58] is disorganized and irregular-so large areas of 
+it will not produce meaningful decoded images. 
+[02:06] Another approach could be to take an encoded 
+image, and then sample points that are in the  
+[02:10] neighborhood of its latent representation.
+This should give us images that resemble  
+[02:15] the original, right?
+Well, not exactly. 
+[02:20] The latent space is so poorly structured that even 
+nearby points often don't correspond to meaningful  
+[02:24] variations of the original image, and if we sample 
+points closer to the original image we just end up  
+[02:29] with the same reconstruction.
+So what's the solution? 
+[02:34] Well ideally, we want a latent space that's 
+nicely organized - where sampling points lead  
+[02:38] to coherent, new images.
+Let's see how VAEs do it.
+[02:45] Well first, let's start by 
+giving you some context. 
+[02:48] The man behind the creation of variational 
+autoencoders is Diederik Kingma, who first  
+[02:52] introduced them in 2013 in his groundbreaking 
+paper, "autoencoding variational Bayes". 
+[02:59] Well, if you haven't heard of Kingma, he's 
+also the mind behind the Adam optimizer,  
+[03:04] which is a widely used optimization algorithm 
+for training neural networks-and a big part  
+[03:10] of why deep learning has made such 
+huge progress in the past decade. 
+[03:14] Kingma's research focuses primarily on 
+deep learning and Bayesian statistics,  
+[03:19] which are precisely the two core 
+elements of variational autoencoders.
+[03:25] Before we can dive into the theory behind 
+VAEs, we will quickly cover some basic Bayesian  
+[03:29] notations and properties.
+If these are new to you,  
+[03:33] don't worry—I'll break them down step by step.
+Let's say we have a random variable X which  
+[03:38] can take any value between 0 and 10.
+When an event occurs according to the  
+[03:43] probability distribution of X, we 
+refer to this as "sampling" from X. 
+[03:49] Now, here is what we call the 
+probability density function of X,  
+[03:53] which basically tells us the probability of a 
+sample being any of the values between 0 and 10. 
+[03:59] We usually note p of x the density of X.
+An interesting quantity describing  
+[04:04] the distribution of X is its 
+expectation, usually noted E of X. 
+[04:09] It is basically the average value that 
+you can expect when sampling from X,  
+[04:13] and it can be computed using the integral 
+of the probability density function. 
+[04:19] Now, let’s consider two random variables, X and Z.
+What you see here in 3D is what we call the joint  
+[04:25] probability distribution of X and Z.
+This represents the probability of each  
+[04:30] possible pair of events occurring together.
+Of course each variable also has its own  
+[04:35] individual probability distribution, 
+known as the marginal distribution. 
+[04:40] As before, we denote the marginal 
+distribution of X as p of x,  
+[04:43] and the marginal distribution of Z as p of Z.
+Note that these are two separate densities,  
+[04:49] although we write both densities with a p.
+An interesting property of the joint  
+[04:54] distribution is that we can use it to 
+compute each of the marginal distributions. 
+[04:59] This process, known as "marginalization," 
+involves integrating the joint distribution  
+[05:04] with respect to the other variable.
+For example, to find the probability of sampling  
+[05:08] a specific value according to X, we integrate the 
+joint distribution over all possible values of Z. 
+[05:15] And similarly, to determine the probability 
+of sampling a value according to Z,  
+[05:19] we integrate over all values of X.
+The final concept we need to cover  
+[05:24] is conditional probabilities.
+The term "p of x given z"  
+[05:28] represents the likelihood of the 
+data x given the latent variable z. 
+[05:33] As you can see it is expressed using the joint 
+distribution and the marginal distribution of Z. 
+[05:39] Essentially, it’s like taking a slice of the 
+joint distribution and normalizing it by the  
+[05:44] probability of sampling that value of Z.
+For instance if we want to compute p of  
+[05:49] x given that z equals to 3, we simply look 
+at this slice and normalize its values by  
+[05:54] the probability that z equals to 3.
+Finally, "p of z given x" represents  
+[06:00] the probability that the latent variable 
+z was present when we sampled the data x. 
+[06:05] We compute it just like we did for 
+the other conditional distribution;  
+[06:09] we look at the slice and normalize the 
+values by the probability that x equals 7. 
+[06:15] Now that we've got the basics down, let's 
+explore the ideas and theory behind VAEs.
+[06:21] So, our goal is to generate new data 
+from a given distribution, p of x,  
+[06:25] which represents our dataset—for example, images.
+The problem is, we don’t know the exact shape or  
+[06:32] properties of p of x; we only 
+have access to some samples,  
+[06:35] for instance images from our training split.
+To make working with p of x easier,  
+[06:40] we introduce another distribution, p 
+of z, called the latent distribution. 
+[06:45] This distribution represents latent 
+variables—vectors in a lower-dimensional  
+[06:50] space that capture the core features of the data.
+Since these two distributions live in different  
+[06:55] spaces, we need mappings to connect them.
+The first mapping is called the posterior  
+[07:01] distribution, and it gives us 
+the probability that a latent  
+[07:03] vector z was generated by a particular image x.
+The second mapping is the likelihood distribution,  
+[07:10] which, given a latent z, tells us the 
+probability of reconstructing an image x from it. 
+[07:16] Now here’s the idea: if we can sample latent 
+vectors from the posterior distribution,  
+[07:22] those latents are likely to 
+have been generated by images  
+[07:25] from our original data distribution, p of x.
+So, if we can reconstruct these latent vectors  
+[07:31] back into images, we’ll effectively generate 
+new samples from our original data distribution. 
+[07:39] However, there’s one issue: we 
+don’t know the exact form of the  
+[07:42] latent distribution p of z either, which 
+makes all the computations intractable. 
+[07:47] To solve this, we assume that the latent 
+distribution is in fact a normal distribution. 
+[07:53] This assumption allows us to compute 
+the likelihood, p of x given z,  
+[07:57] which measures how probable it is to 
+reconstruct an image from a latent vector. 
+[08:02] But we’re still missing an 
+important part of the puzzle:  
+[08:04] the posterior distribution, p of z given x.
+This is where the variational part of  
+[08:10] the Variational Autoencoder comes in.
+Since we don’t know the true posterior,  
+[08:15] we approximate it using a Gaussian 
+distribution, which we’ll call q of z given x. 
+[08:21] This Gaussian will have parameters - mu and sigma 
+- that we need to learn, which is an optimization  
+[08:25] process usually known as variational Bayes.
+And here’s where the magic happens:  
+[08:32] we’ll train a deep encoder to estimate these 
+parameters mu and sigma from the images. 
+[08:38] Then, we’ll use a decoder to reconstruct 
+images from latent variables that are  
+[08:42] sampled from the approximate posterior.
+But how do we actually train this whole  
+[08:47] autoencoder to approximate the posterior, 
+and then reconstruct images from it ?
+[08:54] Using Bayes' formula and some basic 
+properties, we can derive this  
+[08:57] training objective for our autoencoder.
+For those of you who want to know how to  
+[09:02] derive this equation from scratch, 
+we explain all the derivations in  
+[09:05] a bonus section at the end of this video.
+While this whole equation may seem a little  
+[09:10] daunting, it's actually quite intuitive.
+The first part is essentially a data  
+[09:15] consistency term, while the second 
+part acts as a regularization. 
+[09:20] So this data consistency term simply measures 
+how well our model can reconstruct an image  
+[09:24] x from its encoded version z.
+To ensure that z is taken from  
+[09:29] the approximate posterior, we take 
+a real image and simply encode it. 
+[09:34] Conveniently, with all our assumptions, 
+this likelihood term reduces to a simple  
+[09:38] L2 reconstruction loss, also 
+known as the mean square error. 
+[09:43] So to estimate it, we simply take our latent and 
+reconstruct it using the decoder, then measure the  
+[09:48] L2 between the reconstruction and the original 
+image, just as we do for regular autoencoders. 
+[09:55] Now, let's look at the KL 
+divergence part of the equation. 
+[09:59] If you remember our previous video 
+on latent space visualization,  
+[10:03] you know that the KL divergence is a kind of 
+distance between two probability distributions. 
+[10:08] So this term measures how close our approximate 
+posterior is to the prior distribution p of z. 
+[10:14] Since we chose p of z to be a normal distribution, 
+this means that when we optimize the ELBO,  
+[10:20] we constrain the approximate posterior to take 
+the shape of the normal distribution as well! 
+[10:26] To recap, the ELBO is the training 
+objective of our variational  
+[10:29] autoencoder, and it is designed to ensure 
+that the generated samples come from our  
+[10:34] original data distribution p of x.
+It can be thought of as a regularized  
+[10:39] reconstruction loss, with the first 
+term representing the usual L2 loss,  
+[10:44] and the second term imposing a normal 
+distribution shape on our latent space. 
+[10:49] Now that we've got the theory down, 
+let's move on to the practicalities.
+[10:54] So, we have a theoretical objective to optimize, 
+but how does an autoencoder actually implement  
+[10:59] these different distributions in practice?
+Let’s quickly recap what an autoencoder does:  
+[11:05] it takes an input, compresses it into 
+a lower-dimensional representation,  
+[11:09] and then decodes it back into the input space.
+In a standard autoencoder, this compressed  
+[11:15] representation is a single 
+point in the latent space. 
+[11:19] Now with variational autoencoders, 
+things work a bit differently. 
+[11:24] Instead of mapping the input to a single point,  
+[11:26] the encoder converts the input into a probability 
+distribution, that we chose to be a Gaussian. 
+[11:32] Essentially, the encoder transforms the input 
+data into the parameters of this Gaussian,  
+[11:37] namely the mean mu and variance sigma.
+Now, instead of representing our image as  
+[11:42] a single point in the latent space, it’s 
+represented as a Gaussian distribution. 
+[11:48] From this latent distribution, we sample 
+points at random, and the decoder converts  
+[11:53] these sampled points back into the input space.
+We can then compute the different parts of the  
+[11:58] elbo loss, and backpropagate 
+it through the network. 
+[12:03] But wait, can we really do that?
+How do we even backpropagate through  
+[12:07] the sampling operation here?
+Well, the thing is, we can't. 
+[12:12] This is where the 
+"reparameterization trick" comes in. 
+[12:16] Instead of sampling directly from the Gaussian 
+distribution, we introduce a random variable,  
+[12:21] often called epsilon, to handle the 
+randomness outside of the network. 
+[12:26] This trick is actually pretty 
+simple, but very powerful! 
+[12:30] First, we sample a random point from a standard 
+normal distribution: this is our variable epsilon. 
+[12:37] Then we scale it by the variance of our 
+approximated posterior distribution,  
+[12:41] and shift it by its mean.
+It is just as if we sampled  
+[12:45] directly from the posterior distribution, except 
+that by using the reparameterization trick,  
+[12:51] the process becomes differentiable 
+with respect to the mean and variance. 
+[12:56] This trick allows us to backpropagate 
+through the entire network, enabling  
+[13:00] us to train the VAE end-to-end using standard 
+gradient-based optimization techniques like Adam.
+[13:07] In a typical VAE training, the process begins 
+much like training a standard autoencoder. 
+[13:13] We start by taking an image and passing it 
+through the network, which then generates a  
+[13:17] reconstructed version of that image.
+We then compare this reconstruction  
+[13:22] with the original image to measure 
+how well the network is performing. 
+[13:26] But unlike a standard autoencoder, a VAE 
+also outputs the parameters mu and sigma  
+[13:31] of the approximate posterior distribution.
+So we then calculate the Kullback-Leibler  
+[13:37] divergence between this posterior 
+distribution and the prior distribution,  
+[13:41] which is just the standard normal distribution.
+The nice thing is that for two Gaussian  
+[13:46] distributions, the KL divergence has 
+the following closed form expression. 
+[13:51] So we just compute this quantity, 
+backpropagate the combined loss,  
+[13:54] update the network's weights, and repeat 
+this process for each image in our dataset. 
+[13:59] Now, let's take a closer look at how the latent  
+[14:01] space of our VAE evolves 
+as the training progresses.
+[14:09] At the very beginning of the training, 
+the images all get encoded to the  
+[14:12] same region of the latent space.
+Then, after a few gradient steps,  
+[14:20] the regularisation pushes the latents 
+to spread over a normal distribution. 
+[14:25] After 2 or 3 epochs, the Kullback-Leibler 
+divergence is so small that the latent space  
+[14:29] hardly changes, but the reconstruction 
+loss still needs to be optimised.
+[14:34] After the training is complete, the latent space 
+of our VAE looks like this, which is very close  
+[14:39] to the shape of a 2D normal distribution.
+Additionaly, our VAE can now accurately  
+[14:45] reconstruct any digit it encounters: as you can 
+see on the right of the screen, reconstructions  
+[14:51] are very close to the original images.
+But that's not all—the trained VAE also  
+[14:56] allows us to generate entirely new handwritten 
+digits that weren't part of our original dataset. 
+[15:03] By sampling a random latent vector, we 
+can create a wide variety of new digits,  
+[15:07] some realistic and some more creative.
+And we can also generate new  
+[15:11] images that resemble existing ones.
+To do this, we first encode our reference  
+[15:16] image into its latent representation, 
+then sample nearby latent vectors. 
+[15:22] The closer the sampled vector 
+is to the reference vector,  
+[15:25] the more similar the resulting image will be.
+As we move further away in the latent space,  
+[15:31] the generated images become increasingly 
+different from the original image. 
+[15:37] Another interesting feature of VAEs is their 
+ability to blend two images seamlessly. 
+[15:43] To do this, we first encode both images into 
+their latent representations using the encoder. 
+[15:49] Once we have these latent vectors, we can 
+create a convex interpolation between them. 
+[15:54] By adjusting the interpolation parameter alpha, we 
+smoothly transition from one image to the other. 
+[16:01] This shows that the latent space learnt by the 
+VAE is sort of continuous, enabling us to navigate  
+[16:07] through it and still generate coherent results.
+This is very different from simple autoencoders,  
+[16:12] where changes in the latent space often 
+lead to meaningless or distorted results. 
+[16:18] Variational autoencoders, however, maintain 
+a compact and smooth latent space, ensuring  
+[16:23] that most points within the normal distribution in 
+the latent space will lead to plausible samples.
+[16:30] Variational autoencoders are great, but of course 
+they have their weaknesses, the most obvious being  
+[16:35] that they tend to produce very blurry images.
+For example, if we train a fairly large  
+[16:40] variational autoencoder on the CelebA 
+dataset, it will still struggle to  
+[16:44] reconstruct the images efficiently.
+This dataset is composed of portraits  
+[16:49] of celebrities, with images around 5 times 
+bigger than the previous digit images. 
+[16:54] As you can see with these four reconstructions, 
+the faces are somewhat realistic, but the  
+[16:58] background is just a blurry mess.
+Note that this is not caused by the  
+[17:03] architecture of the network, but by 
+the regularization term in the loss. 
+[17:08] And of course, if we randomly sample 
+new data points, the problem persists. 
+[17:15] When VAEs first came out, they were compared 
+to the state of the art generative models,  
+[17:19] which at the time were gans.
+As you can see, the images  
+[17:23] produced by gans are much sharper, which 
+made them more popular for a lot of tasks. 
+[17:28] And it hurts even more when you compare VAEs to 
+the current state of the art generative models,  
+[17:33] diffusion models, that are used 
+in all image generation products  
+[17:36] such as midjourney and stable diffusion.
+Another limitation of basic VAEs is the lack  
+[17:43] of conditioning to impose specific constraints on 
+the generated data: with Kingma's original work,  
+[17:49] we can't really generate a specific image.
+Fortunately, many research papers have  
+[17:54] tried to address these challenges, 
+resulting in several advanced VAE models  
+[17:58] designed to overcome these limitations.
+Some of the more notable variants include  
+[18:03] conditional VAEs, which allow for class-specific 
+image generation; beta VAEs, which introduce a  
+[18:09] tunable parameter to control the trade-off between 
+reconstruction quality and disentanglement;  
+[18:15] and vector quantized VAEs, which provide a 
+discrete latent space for sharper reconstructions. 
+[18:20] We'll explore each of these models in future 
+videos, so stay tuned if you want to know more.
+[18:27] Thank you so much for watching this video! 
+[18:29] If you enjoyed it, please like and 
+subscribe to help me grow the channel. 
+[18:34] The next video will be about contrastive learning.
+See you in the next video!
+[18:41] So let's note q of z given x the 
+approximate posterior distribution. 
+[18:46] Our goal is to sample new data from the 
+original data distribution, so we need to  
+[18:50] pick a sample x that maximizes this probability.
+Well let's start by marginalizing the log density  
+[18:57] of the data distribution.
+We then introduce our  
+[19:00] approximate posterior using this simple trick.
+This allows us to rewrite our expression as the  
+[19:06] expectation of this ratio over our posterior.
+Now, because the log function is concave,  
+[19:12] we can apply Jensen's inequality, which 
+gives us this final inequality where the  
+[19:16] log and expectation have been swapped.
+The right-hand side of this inequality  
+[19:21] is known as the Evidence Lower Bound, or ELBO.
+It is indeed a lower bound to the quantity on  
+[19:28] the left, which is called the evidence.
+So, if we want to maximize the evidence,  
+[19:33] we can focus on maximizing the 
+ELBO—something that’s much simpler to do! 
+[19:38] We can replace the joint probability in 
+this expression using Bayes' formula. 
+[19:43] The ELBO then gets broken down in two main pieces.
+The first one is just the expectation of the  
+[19:49] likelihood over the posterior distribution.
+The second term can actually be rewritten as  
+[19:55] the Kullback-Leibler divergence between the 
+posterior and the prior distribution p of z. 
+[20:01] And just like that, we end up on the loss function 
+used to train the variational autoencoder.

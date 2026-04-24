@@ -1,0 +1,177 @@
+AI, Machine Learning, Deep Learning and Generative AI Explained
+
+Transcript with Timestamps
+
+[00:00] Everybody's talking about artificial intelligence these days, AI.
+[00:04] Machine learning is another hot topic.
+[00:07] Are they the same thing or are they different?
+[00:09] And if so, what are those differences?
+[00:12] And deep learning is another one that comes into play.
+[00:15] I actually did a video on these three:
+[00:18] artificial intelligence, machine learning and deep learning
+[00:21] and talked about where they fit.
+[00:23] And there were a lot of comments on that.
+[00:25] And I read those comments,
+[00:26] and I'd like to address some of the most frequently asked questions
+[00:29] so that we can clear up some of the myths and misconceptions around this.
+[00:33] In addition, something else has happened since that video was recorded,
+[00:37] and that is the absolute explosion of this area of generative AI.
+[00:43] Things like large language models and chat bots
+[00:47] has seemed to be taking over the world.
+[00:49] We see them everywhere.
+[00:51] Really interesting technology.
+[00:53] And then also things like deepfakes.
+[00:56] These are all within the realm of AI, but how do they fit within each other?
+[01:01] How are they related to each other?
+[01:03] We're going to take a look at that in this video
+[01:05] and try to explain how all these technologies relate, and how we can use them.
+[01:11] First off, a little bit of a disclaimer.
+[01:12] I'm going to have to simplify some of these concepts
+[01:15] in order to not make this video last for a week.
+[01:19] So, those of you that are really deep experts in the field, apologies in advance,
+[01:23] but we're going to try to make this simple,
+[01:25] and that will involve some generalizations.
+[01:28] First of all, let's start with AI.
+[01:30] Artificial intelligence is basically trying to simulate with a computer
+[01:36] something that would match or exceed human intelligence.
+[01:40] What is intelligence?
+[01:42] Well, it could be a lot of different things, but generally we tend to think of it
+[01:45] as the ability to learn, to infer and to reason things like that.
+[01:49] So, that's what we're trying to do in the broad field of AI, of artificial intelligence.
+[01:56] And if we look at a timeline of AI, it really kind of started back around this time frame.
+[02:01] And in those days it was very premature.
+[02:04] Most people had not even heard of it.
+[02:06] And it basically was a research project.
+[02:09] But I can tell you, as an undergrad,
+[02:12] which for me was back during these times, we were doing AI work.
+[02:17] In fact, we would use programing languages like Lisp, or Prolog,
+[02:22] and these kinds of things, were kind of the predecessors
+[02:27] to what became, later, expert systems.
+[02:29] And this was a technology ... again, some of these things existed previous,
+[02:34] but that's when it really hit a kind of a critical mass
+[02:37] and became more popularized.
+[02:38] So expert systems of the 1980s, maybe in the 90s.
+[02:42] And and again, we used technologies like this.
+[02:45] All of this was something that we did
+[02:49] before we ever touched in to the next topic I'm going to talk about.
+[02:52] And that's the area of machine learning.
+[02:56] Machine learning is, as its name implies, the machine is learning.
+[03:00] I don't have to program it.
+[03:01] I give it lots of information and it observes things.
+[03:05] So, for instance, if I start doing this,
+[03:07] if I give you this
+[03:09] and then ask you to predict what's the next thing that's going to be there,
+[03:12] well, you might get it, you might not.
+[03:13] You have very limited training data to base this on.
+[03:16] But if I gave you one of those
+[03:18] and then ask you what to predict, what will happen next?
+[03:21] Well, you're probably going to say this and then you're going to say it's this.
+[03:24] And then you think you got it all figured out.
+[03:26] And then you see one of these,
+[03:27] and then all of a sudden I give you one of those and throw you a curveball.
+[03:31] So this in fact and then maybe it goes on like this.
+[03:36] So a machine learning algorithm is really good at looking at patterns
+[03:39] and discovering patterns within data.
+[03:41] The more training data you can give it,
+[03:44] the more confident it can be in predicting.
+[03:47] So predictions are one of the things that machine learning is particularly good at.
+[03:51] Another thing is spotting outliers like this
+[03:55] and saying "oh, that doesn't belong in the - it looks different than all the other stuff because the sequence was broken."
+[04:01] So that's particularly useful in cybersecurity, the area that I work in
+[04:06] because we're looking for outliers.
+[04:07] We're looking for users who are using the system in ways that they shouldn't be,
+[04:11] or ways that they don't typically do.
+[04:13] So this technology, machine learning, is particularly useful for us.
+[04:17] And machine learning really came along, and became more popularized,
+[04:22] in this time frame, in the, the 2010s,
+[04:26] and again, back when I was an undergrad riding my dinosaur to class,
+[04:30] we were doing this kind of stuff.
+[04:33] We never once talked about machine learning.
+[04:35] It might have existed, but it really hadn't hit the popular, mindset yet.
+[04:40] But this technology has matured greatly over the last few decades,
+[04:45] and now it becomes the basis of a lot we do going forward.
+[04:49] The next layer of our Venn diagram involves deep learning.
+[04:53] Well, it's deep learning in the sense that
+[04:56] with deep learning we use these things called neural networks.
+[05:00] Neural networks are ways that in a computer, we simulate and mimic
+[05:04] the way the human brain works,
+[05:06] at least to the extent that we understand how the brain works.
+[05:09] And it's called deep because we have multiple layers of those neural networks.
+[05:13] And the interesting thing about these is
+[05:15] they will simulate the way a brain operates.
+[05:19] But I don't know if you know this, but human brains can be a little bit unpredictable.
+[05:23] You put certain things in, you don't always get the very same thing out.
+[05:27] And deep learning is the same way.
+[05:29] In some cases, we're not actually able to fully understand
+[05:32] why we get the results we do
+[05:34] because there are so many layers to the neural network,
+[05:37] it's a little bit hard to to decompose and figure out exactly what's in there.
+[05:41] But this has become a very important part and a very important advancement.
+[05:45] That also reached some popularity during the 2010s.
+[05:50] And as something that we use still today as the basis for our next area of AI.
+[05:56] The most recent advancements in the field of artificial intelligence
+[06:00] all really are in this space, the area of generative AI.
+[06:04] Now I'm going to introduce a term that you may not be familiar with.
+[06:07] It's the idea of foundation models.
+[06:09] Foundation models is where we get some of these kinds of things.
+[06:14] For instance, an example of a foundation model
+[06:16] would be a large language model.
+[06:19] Which is where we take language and we model it,
+[06:22] and we make predictions in this technology
+[06:25] where if I see certain types of of words,
+[06:28] then I can sort of predict what the next set of words will be.
+[06:31] I'm going to oversimplify here for the sake of simplicity,
+[06:34] but think about this is a little bit like the autocomplete
+[06:38] when you start typing something in, and then it predicts what your next word will be.
+[06:42] Except in this case, with large language models, they're not predicting the next word.
+[06:46] They're predicting the next sentence, the next paragraph, the next entire document.
+[06:51] So there's a really an amazing exponential leap in what these things are able to do.
+[06:56] And we call all of these technologies generative.
+[07:01] Because they are generating new content.
+[07:05] Some people have actually made the argument that
+[07:07] the generative AI isn't really generative, that
+[07:10] that these technologies are really just regurgitating existing information
+[07:14] and putting it in a different format.
+[07:15] Well, let me give you an analogy.
+[07:18] If you take music, for instance, then every note has already been invented.
+[07:24] So in a sense, every song is just a recombination,
+[07:27] some other permutation of all the notes that already exist already.
+[07:31] And just putting them in a different order.
+[07:34] Well, we don't say new music doesn't exist.
+[07:37] People are still composing and creating new songs from the existing information.
+[07:43] I'm going to say Gen AI is similar.
+[07:45] It's a it's an analogy, so there'll be some imperfections in it,
+[07:48] but you get the general idea.
+[07:49] Actually, new content can be generated out of these.
+[07:53] And there are a lot of different forms that this can take.
+[07:55] What other types of models are audio models, video models and things like that.
+[08:02] Well, in fact, these we can use to create deepfakes.
+[08:08] And deepfakes are examples where we're able to take, for instance, a person's voice
+[08:13] and recreate that and then have it seem like the person said things they never said.
+[08:19] Well, it's really useful in entertainment situations, in parodies and things like that.
+[08:24] Or if someone's losing their voice, then you could capture their voice,
+[08:27] and then they'd be able to type and you'd be able to hear it in their voice.
+[08:30] But there's also a lot of cases where this stuff could be abused.
+[08:34] The chat bots, again, come from this space.
+[08:38] The deepfakes come from this space,
+[08:41] but they're all part of generative AI and all part of these foundation models.
+[08:46] And this, again, is the area that has really caused all of us to really pay attention to AI.
+[08:52] The possibilities of generating new content, or in some cases,
+[08:56] summarizing existing content
+[08:58] and giving us something that is bite size and manageable.
+[09:02] This is what has gotten all of the attention.
+[09:05] This is where the chat bots and all of these things come in.
+[09:08] In the early days, AI's adoption started off pretty slowly.
+[09:12] Most people didn't even know it existed, and if they did,
+[09:15] it was something that always seemed like it was about 5 to 10 years away.
+[09:18] But then machine learning, deep learning and things like that
+[09:21] came along and we started seeing some uptick.
+[09:24] Then foundation models, Gen AI and the like
+[09:27] came along and this stuff went straight to the moon.
+[09:30] These foundation models are what have changed the adoption curve.
+[09:34] And now you see AI being adopted everywhere.
+[09:37] And the thing for us to understand is where this is, where it fits in,
+[09:41] and make sure that we can reap the benefits from all of this technology.
+[09:46] If you liked this video and want to see more like it, please like and subscribe.
+[09:50] If you have any questions or want to share your thoughts about this topic,
+[09:53] please leave a comment below.

@@ -1,0 +1,71 @@
+What are Autoencoders?
+
+Transcript with Timestamps
+
+[00:01] If I input myself into an autoencoder...
+[00:06] it could create a pretty good,
+[00:09] although not perfect, reconstruction of me.
+[00:14] Why don't I...
+[00:15] well, I mean you, explain?
+[00:17] Sure.
+[00:18] So, look, autoencoders are an unsupervised neural network,
+[00:22] and they consist of two parts.
+[00:24] Let's take a look.
+[00:25] There is, first of all, an encoder.
+[00:30] That's the first layer.
+[00:32] And that takes in some input.
+[00:37] And learns how to efficiently compress and encode that data
+[00:42] into something that we call the "code".
+[00:49] Then we have a decoder that learns how to reconstruct that encoded data representation.
+[00:56] So, decoder..
+[00:59] and that creates output.
+[01:03] And that output is as similar to the original input data as possible.
+[01:09] Effectively, an autoencoder learns to recognize which aspects of observable data are relevant,
+[01:15] and limit noise in data that can be discarded.
+[01:18] Separate the signal from the noise.
+[01:22] OK, great.
+[01:22] So is this all about creating smaller file sizes like the way I'll zip up some documents or compress a video?
+[01:30] No, not at all.
+[01:31] So let's talk about some examples.
+[01:35] Convolutional autoencoders have a variety of use cases related to images.
+[01:40] So, for example, I can draw an image like this number three.
+[01:45] And then through a process called feature extraction,
+[01:49] I can derive the required features of the image by removing noise;
+[01:55] something that looks a bit more like this.
+[02:00] And then I'm able to generate an output that approximates the original.
+[02:06] It's not exactly the same.
+[02:09] But it's pretty close.
+[02:12] Now I can use this part, called the code,
+[02:14] to do other things like create a higher resolution version of the output image,
+[02:19] or I can colorized an image, so black and white input -- full color output.
+[02:24] Now, in this case, the input and the output, they look much the same,
+[02:28] which, well, that's what autoencoders are all about, but they don't have to be.
+[02:34] We can provide input to an autoencoder in a corrupted form, like the noisy image of a three.
+[02:41] And then train a de-noising autoencoder to reconstruct our original image from the noisy version of it.
+[02:49] Once we've trained our autoencoder to remove noise from a representation of a number,
+[02:54] or a picture, or park bench,
+[02:57] we can apply that to all sorts of objects within an object element that displayed the same noise pattern.
+[03:04] So let's take a closer look inside an autoencoder.
+[03:08] The encoder itself compresses the input into a latent space representation.
+[03:14] So, we have multiple layers here that represent the encoder.
+[03:23] Each one a little smaller than the other, so this part here, that's the encoder.
+[03:29] The most compressed version, that's called the code,
+[03:33] that's also known as the bottleneck,
+[03:37] because, I suppose, much like the neck of a bottle, that's the most compressed part.
+[03:42] Then we have the decoder, which is reconstructed from that bottleneck.
+[03:51] That's the decoder.
+[03:53] And it's reconstructed from the latent space representation to generate the output.
+[03:58] By learning what makes up the signal and what makes up the noise,
+[04:01] we also have the ability to detect when something is not part of the status quo,
+[04:06] and that's anomaly detection.
+[04:08] Anomalies are a significant deviation from the general behavior of the data,
+[04:13] and autoencoders are a very good at telling us when something doesn't fit.
+[04:17] As a result, autoencoders are a widely used in anomaly detection in things such as
+[04:22] fault, fraud, and intrusion detection.
+[04:26] So autoencoders are a great way of extracting noise, recognizing relevant features, and detecting anomalies.
+[04:34] A pretty handy toolbox for dealing with all sorts of data...
+[04:38] and eerily similar clones.
+[04:45] If you have any questions, please drop us a line below,
+[04:48] and if you want to see more videos like this in the future,
+[04:51] please like and subscribe.
+[04:53] Thanks for watching.

@@ -1,0 +1,33 @@
+How to Check Your Firewall Settings
+
+Transcript with Timestamps
+
+[00:00] welcome to this tutorial
+[00:04] how to check your firewall settings
+[00:07] click on the search bar at the bottom
+[00:09] left on the taskbar
+[00:12] type firewall
+[00:13] and from the search result click on the
+[00:16] windows defender firewall
+[00:20] click on the private networks to see the
+[00:22] settings
+[00:25] similarly you can click on the guest or
+[00:28] public networks to check the settings
+[00:32] click on the advanced settings
+[00:38] this will show you all the inbound rules
+[00:48] [Music]
+[00:50] outbound rules
+[00:54] and monitoring settings
+[00:59] [Music]
+[01:03] close this window
+[01:09] click on the turn windows defender
+[01:11] firewall on or off
+[01:17] here you can turn off windows firewall
+[01:20] which is not recommended
+[01:22] so i am clicking on the radio button of
+[01:25] turn on windows defender firewall
+[01:28] click on the ok button
+[01:30] close the firewall settings window
+[01:33] [Music]
+[01:35] wasn't that easy have a nice day please
+[01:38] subscribe to our channel
