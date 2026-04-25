@@ -13,7 +13,8 @@ import {
   Youtube, 
   Clock, 
   ChevronRight,
-  AlertCircle
+  AlertCircle,
+  BrainCircuit
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -48,104 +49,130 @@ export default function Home() {
         const validVideos = results.map((v: any) => ({
           ...v,
           // Fallback logic for thumbnail keys
-          imgUrl: v.thumbnail || v.thumbnail_url || (v.thumbnails && v.thumbnails.high?.url) || v.thumbnails?.[0]?.url
+          img: v.thumbnails?.[0]?.url || v.thumbnail || v.image,
+          id: v.id || v.videoId,
+          author: v.channel?.name || v.author?.name || v.author,
+          duration: v.duration?.text || v.duration || 'Video'
         }));
 
-        setVideos(validVideos.slice(0, 6)); // Display top results
+        setVideos(validVideos);
       } else {
-        alert(`Search Error: ${data.detail || 'The YouTube agent failed to find videos.'}`);
+        throw new Error(data.detail || 'Search failed');
       }
-    } catch (err) {
-      console.error('Connection Error:', err);
-      alert("Backend Connection Failed. Make sure your Python server is running.");
+    } catch (err: any) {
+      console.error(err);
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="p-8 space-y-12 max-w-7xl mx-auto">
-      {/* Hero Search Section */}
-      <section className={`relative p-12 rounded-[40px] overflow-hidden bg-primary transition-all duration-700 shadow-2xl shadow-primary/20 ${videos.length > 0 ? 'py-10' : 'min-h-[450px] flex flex-col justify-center'}`}>
-        <motion.div layout className="relative z-10 max-w-3xl mx-auto text-center">
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 border border-white/20 text-blue-200 text-[10px] font-black uppercase tracking-[0.2em] mb-8">
-            <Sparkles className="size-4" /> Scholar Research Agent
-          </motion.div>
+    <div className="min-h-screen bg-[#050505] text-white selection:bg-primary/30">
+      {/* Hero Section */}
+      <section className="relative pt-32 pb-20 px-6 flex flex-col items-center text-center overflow-hidden">
+        {/* Abstract Background Glow */}
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-[600px] bg-primary/10 blur-[120px] rounded-full opacity-30 pointer-events-none" />
+        
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 mb-8 backdrop-blur-md"
+        >
+          <Sparkles size={14} className="text-primary" />
+          <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">AI-Powered Video Research</span>
+        </motion.div>
 
-          <h2 className={`font-black text-white mb-8 leading-tight tracking-tighter transition-all duration-500 ${videos.length > 0 ? 'text-4xl' : 'text-6xl'}`}>
-            {videos.length > 0 ? (
-              <>Sources for <span className="text-blue-200 italic">"{topic}"</span></>
-            ) : (
-              <>Research Any Topic via <br/><span className="text-blue-200 italic underline decoration-blue-400/50">YouTube Intelligence.</span></>
-            )}
-          </h2>
-          
-          <form onSubmit={handleResearch} className="relative group max-w-2xl mx-auto">
-            <Search className="absolute left-6 top-1/2 -translate-y-1/2 size-6 text-white/40 group-focus-within:text-white" />
+        <motion.h1 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+          className="text-6xl md:text-8xl font-black tracking-tighter mb-8 leading-[0.85]"
+        >
+          SEARCH. ANALYZE.<br />
+          <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary via-purple-500 to-blue-500">UNDERSTAND.</span>
+        </motion.h1>
+
+        <motion.p 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+          className="max-w-2xl text-slate-400 text-lg md:text-xl mb-12 leading-relaxed font-medium"
+        >
+          The ultimate engine for YouTube intelligence. Extract insights, summarize complex topics, and chat with any video in seconds.
+        </motion.p>
+
+        {/* Dynamic Search Bar */}
+        <motion.form 
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ delay: 0.3 }}
+          onSubmit={handleResearch}
+          className="w-full max-w-3xl relative"
+        >
+          <div className="relative flex items-center p-2 rounded-[32px] bg-white/[0.03] border border-white/10 backdrop-blur-xl focus-within:border-primary/50 focus-within:ring-4 ring-primary/10 transition-all duration-500">
+            <div className="pl-6 text-slate-500">
+              <Search size={22} />
+            </div>
             <input 
-              type="text" 
-              placeholder="Enter a topic (e.g., Quantum Physics, Stock Analysis...)"
-              className="w-full bg-white/10 backdrop-blur-xl border border-white/20 rounded-[32px] py-6 pl-16 pr-44 text-white placeholder:text-white/40 outline-none focus:ring-4 ring-white/10 text-lg font-medium"
+              type="text"
               value={topic}
               onChange={(e) => setTopic(e.target.value)}
+              placeholder="What do you want to learn today?"
+              className="flex-1 bg-transparent border-none outline-none px-6 py-5 text-white placeholder:text-slate-600 text-lg font-medium"
             />
             <button 
+              type="submit"
               disabled={loading}
-              className="absolute right-3 top-3 bottom-3 px-8 bg-white text-primary rounded-[24px] font-black uppercase tracking-widest hover:scale-[1.02] active:scale-95 transition-all flex items-center gap-2"
+              className="bg-primary hover:bg-blue-600 disabled:opacity-50 text-white px-10 py-5 rounded-[24px] font-black uppercase text-xs tracking-widest transition-all flex items-center gap-3 group shadow-xl shadow-primary/20"
             >
-              {loading ? <Loader2 className="animate-spin size-5" /> : <Rocket className="size-5" />}
-              {loading ? 'Fetching...' : 'Research'}
+              {loading ? <Loader2 className="animate-spin" size={18} /> : (
+                <>Research <ChevronRight size={18} className="group-hover:translate-x-1 transition-transform" /></>
+              )}
             </button>
-          </form>
-        </motion.div>
-        <div className="absolute top-0 right-0 w-full h-full bg-[radial-gradient(circle_at_top_right,_var(--tw-gradient-stops))] from-blue-400/20 via-transparent to-transparent pointer-events-none" />
+          </div>
+        </motion.form>
       </section>
 
-      {/* Video Results Grid */}
-      <AnimatePresence mode="wait">
+      {/* Results Section */}
+      <AnimatePresence>
         {videos.length > 0 && (
           <motion.section 
-            initial={{ opacity: 0, y: 30 }}
+            initial={{ opacity: 0, y: 40 }}
             animate={{ opacity: 1, y: 0 }}
-            className="space-y-8 pb-20"
+            className="max-w-7xl mx-auto px-6 pb-32"
           >
-            <div className="flex items-center justify-between border-b border-white/5 pb-6">
-              <h3 className="text-xs font-black uppercase tracking-[0.3em] text-slate-500">Video Content Synthesized</h3>
-              <button onClick={() => setVideos([])} className="text-[10px] font-black uppercase text-slate-400 hover:text-white">New Search</button>
+            <div className="flex items-center justify-between mb-12">
+              <div className="flex items-center gap-3">
+                <div className="size-10 rounded-2xl bg-primary/10 flex items-center justify-center text-primary">
+                  <Youtube size={20} />
+                </div>
+                <div>
+                  <h3 className="text-xl font-black uppercase tracking-tight">Intelligence Feed</h3>
+                  <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Results for: {topic}</p>
+                </div>
+              </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {videos.map((video, index) => (
-                <motion.div 
-                  key={video.id || video.video_id || index}
-                  initial={{ opacity: 0, scale: 0.95 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: index * 0.05 }}
-                  onClick={() => navigate(`/video/${video.id || video.video_id}`, { state: { video } })}
-                  className="group cursor-pointer bg-white/[0.02] rounded-[32px] border border-white/5 overflow-hidden hover:border-primary/50 transition-all shadow-xl"
+              {videos.map((video, idx) => (
+                <motion.div
+                  key={video.id + idx}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: idx * 0.05 }}
+                  onClick={() => navigate(`/video/${video.id}`, { state: { video } })}
+                  className="group relative bg-white/[0.02] border border-white/5 rounded-[40px] overflow-hidden cursor-pointer hover:bg-white/[0.04] hover:border-white/10 transition-all duration-500"
                 >
-                  <div className="aspect-video relative overflow-hidden bg-slate-900">
-                    {video.imgUrl ? (
-                      <img 
-                        src={video.imgUrl} 
-                        alt={video.title} 
-                        referrerPolicy="no-referrer"
-                        crossOrigin="anonymous"
-                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 opacity-80 group-hover:opacity-100" 
-                        onError={(e) => {
-                          // Handle broken images by showing a placeholder
-                          (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1611162617474-5b21e879e113?q=80&w=1000&auto=format&fit=crop';
-                        }}
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center bg-slate-800">
-                        <Youtube className="size-12 text-slate-700" />
-                      </div>
-                    )}
-                    
-                    <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <div className="size-14 rounded-full bg-primary flex items-center justify-center text-white scale-75 group-hover:scale-100 transition-transform">
-                        <PlayCircle size={28} />
+                  <div className="aspect-video relative overflow-hidden">
+                    <img 
+                      src={video.img} 
+                      alt={video.title}
+                      className="w-full h-full object-cover grayscale-[0.5] group-hover:grayscale-0 group-hover:scale-105 transition-all duration-700"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-[#050505] to-transparent opacity-60" />
+                    <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-500">
+                      <div className="size-16 rounded-full bg-primary/90 text-white flex items-center justify-center backdrop-blur-md shadow-2xl scale-75 group-hover:scale-100 transition-transform duration-500">
+                        <PlayCircle size={32} />
                       </div>
                     </div>
                   </div>
@@ -166,13 +193,33 @@ export default function Home() {
         )}
       </AnimatePresence>
 
-      {/* Suggested Topics (Placeholder State) */}
+      {/* Suggested Topics */}
       {videos.length === 0 && !loading && (
-        <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 opacity-40">
-          {['Quantum Physics', 'Neural Networks', 'Global Economics', 'Philosophy 101'].map(t => (
-            <div key={t} className="p-8 rounded-[32px] border border-white/5 bg-white/[0.02]">
-              <div className="h-4 w-2/3 bg-white/10 rounded mb-4" />
-              <div className="h-2 w-1/2 bg-white/5 rounded" />
+        <section className="flex flex-wrap justify-center gap-3 mt-12 max-w-3xl mx-auto px-6">
+          {['Quantum Computing', 'Neural Networks', 'Roman Empire', 'Photosynthesis', 'SpaceX Starship', 'React Components'].map(t => (
+            <button 
+              key={t}
+              onClick={() => setTopic(t)}
+              className="px-6 py-3 rounded-2xl border border-white/10 bg-white/5 text-[10px] font-black uppercase tracking-widest text-slate-400 hover:bg-primary/10 hover:text-primary hover:border-primary/20 transition-all"
+            >
+              {t}
+            </button>
+          ))}
+        </section>
+      )}
+
+      {/* Feature Section Placeholder */}
+      {videos.length === 0 && !loading && (
+        <section className="max-w-7xl mx-auto px-6 py-32 grid grid-cols-1 md:grid-cols-3 gap-12">
+          {[
+            { icon: <Rocket />, title: "Instant Indexing", desc: "Process any video URL or topic search in real-time." },
+            { icon: <BrainCircuit />, title: "Contextual RAG", desc: "Chat with your data using advanced vector embeddings." },
+            { icon: <Sparkles />, title: "Smart Synthesis", desc: "Get condensed summaries of hour-long lectures instantly." }
+          ].map((f, i) => (
+            <div key={i} className="space-y-4">
+              <div className="size-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-primary">{f.icon}</div>
+              <h4 className="text-sm font-black uppercase tracking-widest">{f.title}</h4>
+              <p className="text-slate-500 text-sm leading-relaxed">{f.desc}</p>
             </div>
           ))}
         </section>
