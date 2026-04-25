@@ -166,7 +166,7 @@ class TranscriptRAG:
             LOG.warning("COHERE_API_KEY not found. Reranking will be disabled.")
             self.cohere_client = None
         self.llm = ChatOllama(
-            model="kimi-k2-thinking:cloud", 
+            model="gemma4:31b-cloud", 
             base_url=self.ollama_base_url, 
             headers=self.request_headers
         )
