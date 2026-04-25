@@ -1,0 +1,6 @@
+{
+  "name": "Insight Scholar AI",
+  "description": "Multi-screen AI platform for advanced research and learning, featuring video analysis, multi-doc chat, and MCQ generation.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["AI-Powered Learning", "Research Management"]
+}

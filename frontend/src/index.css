@@ -6,13 +6,28 @@
   --color-background-light: #f6f6f8;
   --color-surface-dark: #1c1836;
   --color-accent-purple: #7c3aed;
+  
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
 }
 
 @layer base {
-  body { @apply font-sans antialiased bg-[#131022] text-white; }
+  body {
+    @apply font-sans antialiased;
+  }
 }
 
-.glass-effect { @apply bg-white/5 backdrop-blur-md border border-white/10; }
-.scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
-.scrollbar-hide::-webkit-scrollbar { display: none; }
+.glass-effect {
+  @apply bg-white/5 backdrop-blur-md border border-white/10;
+}
+
+.gradient-text {
+  @apply bg-linear-to-r from-white to-[#9b92c9] bg-clip-text text-transparent;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
