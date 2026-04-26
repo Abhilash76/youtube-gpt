@@ -1,175 +1,205 @@
-import React from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { useLocation } from 'react-router-dom';
+import { fetchWithRetry } from '../lib/apiUtils';
+import mermaid from 'mermaid';
 import { 
   Plus, 
   Minus, 
   Maximize, 
   Zap, 
-  Layers, 
-  Share2, 
-  MoreVertical,
   Activity,
-  Code,
-  Bookmark,
-  X,
-  PlayCircle,
-  FileText,
-  Sparkles
+  ChevronUp,
+  ChevronDown,
+  FileText
 } from 'lucide-react';
-import { motion } from 'framer-motion';
-import { cn } from '../lib/utils';
+import { motion, AnimatePresence } from 'framer-motion';
+
+mermaid.initialize({
+  startOnLoad: false,
+  theme: 'dark',
+  securityLevel: 'loose',
+  mindmap: {
+    padding: 20
+  }
+});
 
 export default function Mindmap() {
+  const location = useLocation();
+  
+  let savedData = null;
+  try {
+    const raw = localStorage.getItem('class-gpt-data');
+    if (raw) savedData = JSON.parse(raw);
+  } catch (e) {}
+
+  const transcriptText = location.state?.transcript || savedData?.transcript || "";
+
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [mindmapData, setMindmapData] = useState<string | null>(null);
+  
+  const [summary, setSummary] = useState<string | null>(null);
+  const [summaryLoading, setSummaryLoading] = useState(false);
+  const [isSummaryExpanded, setIsSummaryExpanded] = useState(false);
+
+  const mermaidRef = useRef<HTMLDivElement>(null);
+  const [zoom, setZoom] = useState(1);
+
+  const fetchMindmap = useCallback(async () => {
+    if (!transcriptText) {
+      setError("No transcript data available to generate Mindmap.");
+      return;
+    }
+    
+    setLoading(true);
+    setError(null);
+    
+    try {
+      const res = await fetchWithRetry('/api/mindmap', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ transcript_text: transcriptText })
+      }, 5);
+      
+      const data = await res.json();
+      setMindmapData(data.mind_map);
+    } catch (err: any) {
+      setError(err.message || "Failed to load Mindmap");
+    } finally {
+      setLoading(false);
+    }
+  }, [transcriptText]);
+
+  const fetchSummary = useCallback(async () => {
+    if (!transcriptText) return;
+    setSummaryLoading(true);
+    try {
+      const res = await fetchWithRetry('/api/summarize', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ transcript_text: transcriptText })
+      });
+      const data = await res.json();
+      setSummary(data.summary);
+    } catch (e) {
+      console.error("Failed to fetch summary", e);
+    } finally {
+      setSummaryLoading(false);
+    }
+  }, [transcriptText]);
+
+  useEffect(() => {
+    fetchMindmap();
+    fetchSummary();
+  }, [fetchMindmap, fetchSummary]);
+
+  useEffect(() => {
+    if (mindmapData && mermaidRef.current) {
+      mermaidRef.current.innerHTML = '';
+      mermaid.render('mindmap-svg', mindmapData).then((result) => {
+        if (mermaidRef.current) {
+          mermaidRef.current.innerHTML = result.svg;
+          // Force the SVG to take up visible space
+          const svgElement = mermaidRef.current.querySelector('svg');
+          if (svgElement) {
+            svgElement.style.width = '100%';
+            svgElement.style.height = 'auto';
+            svgElement.style.minHeight = '60vh';
+          }
+        }
+      }).catch((e) => {
+        console.error("Mermaid rendering failed:", e);
+        if (mermaidRef.current) {
+          mermaidRef.current.innerHTML = `<div class="text-red-500 bg-red-500/10 p-4 rounded-xl border border-red-500/20">Failed to render mindmap: ${e.message}</div>`;
+        }
+      });
+    }
+  }, [mindmapData]);
+
+  if (error) {
+    return (
+      <div className="flex flex-col h-full items-center justify-center bg-background-dark/20 space-y-4 min-h-screen">
+        <Zap className="size-12 text-primary" />
+        <p className="text-slate-400">{error}</p>
+        <button onClick={() => fetchMindmap()} className="px-6 py-2 bg-primary text-white rounded-xl font-bold uppercase tracking-widest text-xs">
+          Retry Component
+        </button>
+      </div>
+    );
+  }
+
+  if (loading || !mindmapData) {
+    return (
+      <div className="flex flex-col h-full items-center justify-center bg-background-dark/20 space-y-4 min-h-screen">
+        <Activity className="size-12 text-primary animate-pulse" />
+        <p className="text-slate-400 text-xs font-bold uppercase tracking-widest">Generating Mindmap...</p>
+      </div>
+    );
+  }
+
   return (
-    <div className="flex h-full overflow-hidden relative bg-background-dark/20 uppercase tracking-tight">
-      {/* Canvas Area */}
-      <main className="flex-1 relative flex items-center justify-center overflow-hidden">
-        {/* Controls Overlay */}
+    <div className="flex flex-col h-full overflow-hidden relative bg-background-dark/20 uppercase tracking-tight min-h-screen">
+      <main className="flex-1 relative flex items-center justify-center overflow-auto">
         <div className="absolute top-6 left-6 z-10 flex gap-3">
           <div className="flex glass-effect rounded-xl shadow-2xl p-1 bg-black/40">
-            <button className="p-2.5 hover:bg-white/10 rounded-lg text-slate-300"><Plus className="size-5" /></button>
-            <button className="p-2.5 hover:bg-white/10 rounded-lg text-slate-300 border-x border-white/5"><Minus className="size-5" /></button>
-            <button className="p-2.5 hover:bg-white/10 rounded-lg text-slate-300"><Maximize className="size-5" /></button>
-          </div>
-          <div className="flex bg-white/5 backdrop-blur-xl rounded-xl shadow-2xl border border-white/10 p-1">
-            <button className="px-4 py-2 hover:bg-white/5 rounded-lg text-[10px] font-black text-slate-300 flex items-center gap-2">
-              <Zap className="size-4 text-primary fill-current" />
-              AUTO-LAYOUT
-            </button>
+            <button onClick={() => setZoom(z => z + 0.2)} className="p-2.5 hover:bg-white/10 rounded-lg text-slate-300"><Plus className="size-5" /></button>
+            <button onClick={() => setZoom(z => Math.max(0.2, z - 0.2))} className="p-2.5 hover:bg-white/10 rounded-lg text-slate-300 border-x border-white/5"><Minus className="size-5" /></button>
+            <button onClick={() => setZoom(1)} className="p-2.5 hover:bg-white/10 rounded-lg text-slate-300"><Maximize className="size-5" /></button>
           </div>
         </div>
 
-        {/* View Toggles */}
-        <div className="absolute top-6 right-6 z-10">
-          <div className="flex glass-effect rounded-xl shadow-2xl p-1 bg-black/40 font-black text-[10px] uppercase tracking-widest">
-            <button className="px-5 py-2.5 bg-primary text-white rounded-lg">Concept</button>
-            <button className="px-5 py-2.5 hover:bg-white/5 text-slate-500 rounded-lg">Timeline</button>
-            <button className="px-5 py-2.5 hover:bg-white/5 text-slate-500 rounded-lg">Resources</button>
-          </div>
-        </div>
-
-        {/* SVG Visualization (Simplified representation) */}
-        <div className="relative w-full h-full flex items-center justify-center p-20">
-          <svg className="absolute inset-0 size-full pointer-events-none opacity-20">
-            <line x1="50%" y1="50%" x2="35%" y2="35%" stroke="var(--color-primary)" strokeWidth="2" strokeDasharray="4 4" />
-            <line x1="50%" y1="50%" x2="65%" y2="35%" stroke="var(--color-primary)" strokeWidth="2" strokeDasharray="4 4" />
-            <line x1="50%" y1="50%" x2="35%" y2="65%" stroke="var(--color-primary)" strokeWidth="2" strokeDasharray="4 4" />
-            <line x1="50%" y1="50%" x2="65%" y2="65%" stroke="var(--color-primary)" strokeWidth="2" strokeDasharray="4 4" />
-          </svg>
-
-          {/* Core Master Node */}
-          <motion.div 
-            initial={{ scale: 0.8, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            className="absolute z-20"
-          >
-            <div className="bg-primary p-8 rounded-3xl flex flex-col items-center gap-3 border-4 border-primary/30 text-center min-w-[220px] shadow-[0_0_50px_rgba(44,15,189,0.4)]">
-              <Activity className="size-10 text-white" />
-              <h3 className="text-white font-black text-xl tracking-tighter">Neural Networks</h3>
-              <p className="text-white/60 text-[9px] font-black uppercase tracking-[0.2em]">Master Concept</p>
-            </div>
-          </motion.div>
-
-          {/* Sub-Node: Architecture */}
-          <motion.div 
-            initial={{ x: -100, y: -100, opacity: 0 }}
-            animate={{ x: -200, y: -150, opacity: 1 }}
-            className="absolute z-10"
-          >
-            <div className="glass-effect p-5 rounded-2xl border-2 border-primary/20 shadow-2xl flex flex-col items-center gap-2 group cursor-pointer hover:border-primary transition-all">
-              <Layers className="size-6 text-primary" />
-              <h4 className="text-white font-bold text-sm uppercase">Architecture</h4>
-              <div className="flex gap-1.5 mt-2">
-                <div className="size-2 rounded-full bg-primary"></div>
-                <div className="size-2 rounded-full bg-primary"></div>
-                <div className="size-2 rounded-full bg-slate-700"></div>
-              </div>
-            </div>
-          </motion.div>
-
-          {/* More sub-nodes could be here... */}
-        </div>
-
-        {/* Video Mini-Player Bottom Bar */}
-        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 w-full max-w-2xl px-6">
-          <div className="glass-effect rounded-2xl shadow-2xl border-primary/20 p-4 flex items-center gap-6 backdrop-blur-3xl bg-black/60">
-            <div className="w-40 aspect-video rounded-xl overflow-hidden relative shrink-0 group cursor-pointer shadow-lg">
-              <img 
-                src="https://images.unsplash.com/photo-1620712943543-bcc4628c6757?auto=format&fit=crop&q=80&w=600" 
-                alt="Mini" 
-                className="w-full h-full object-cover opacity-60 group-hover:opacity-100 transition-opacity" 
-              />
-              <div className="absolute inset-0 flex items-center justify-center">
-                <PlayCircle className="text-white size-10" />
-              </div>
-            </div>
-            
-            <div className="flex-1 min-w-0">
-              <div className="flex justify-between items-center mb-2">
-                <h5 className="text-white font-black text-xs truncate uppercase tracking-tight">4.2 - Understanding the Multi-layer Perceptron</h5>
-                <span className="text-[10px] text-slate-500 font-bold">12:45 / 18:20</span>
-              </div>
-              <div className="w-full h-2 bg-slate-800 rounded-full mb-4">
-                <div className="w-[70%] h-full bg-primary rounded-full relative">
-                  <div className="absolute right-0 top-1/2 -translate-y-1/2 size-4 bg-white border-4 border-primary rounded-full shadow-2xl"></div>
-                </div>
-              </div>
-              <div className="flex gap-6">
-                <button className="flex items-center gap-2 text-[10px] font-black uppercase text-slate-500 hover:text-primary transition-colors tracking-widest">
-                  <FileText className="size-4" /> Add Note
-                </button>
-                <button className="flex items-center gap-2 text-[10px] font-black uppercase text-slate-500 hover:text-primary transition-colors tracking-widest">
-                  <Sparkles className="size-4" /> Take Quiz
-                </button>
-              </div>
-            </div>
-          </div>
+        <div className="w-full h-full flex items-center justify-center p-8 mt-12 pb-24">
+           <div 
+             ref={mermaidRef} 
+             style={{ transform: `scale(${zoom})`, transformOrigin: 'center' }}
+             className="w-full h-full flex justify-center items-center transition-transform duration-300 [&>svg]:max-w-6xl [&>svg]:w-full"
+           />
         </div>
       </main>
 
-      {/* Right Details Sidebar */}
-      <aside className="hidden xl:flex w-80 flex-col border-l border-white/5 bg-background-dark/40 p-8 gap-8 overflow-y-auto scrollbar-hide">
-        <div className="flex items-center justify-between">
-          <h3 className="text-white font-black text-sm uppercase tracking-widest">Node Details</h3>
-          <X className="size-5 text-slate-600 cursor-pointer" />
-        </div>
-
-        <div className="rounded-2xl border border-white/5 bg-white/2 overflow-hidden shadow-2xl">
-          <div className="h-32 bg-primary/20 relative flex items-center justify-center">
-            <Layers className="size-12 text-primary opacity-50" />
-            <div className="absolute bottom-4 left-4 flex items-center gap-2">
-              <h4 className="text-white font-black text-xs uppercase tracking-widest">ARCHITECTURE</h4>
+      <div className="absolute bottom-0 left-0 w-full z-20 flex justify-center pb-8 pointer-events-none">
+        <div className="w-full max-w-4xl px-4 pointer-events-auto">
+          <div className="glass-effect rounded-2xl shadow-2xl border border-white/10 bg-black/80 backdrop-blur-3xl overflow-hidden transition-all duration-500">
+            <div 
+              className="p-4 flex items-center justify-between cursor-pointer hover:bg-white/5"
+              onClick={() => setIsSummaryExpanded(!isSummaryExpanded)}
+            >
+              <div className="flex items-center gap-3">
+                <FileText className="text-primary size-5" />
+                <span className="font-black text-sm uppercase tracking-widest text-white">Video Summary</span>
+                {summaryLoading && <Activity className="size-4 animate-spin text-slate-500" />}
+              </div>
+              <button className="p-1 text-slate-400 hover:text-white transition-colors">
+                {isSummaryExpanded ? <ChevronDown size={20} /> : <ChevronUp size={20} />}
+              </button>
             </div>
-          </div>
-          <div className="p-6 space-y-6">
-            <p className="text-[11px] text-slate-500 leading-relaxed font-medium">
-              Defines the structural blueprint including input, output, and hidden layers. Critical for understanding forward propagation.
-            </p>
-            <div className="space-y-3">
-              {[
-                { icon: Bookmark, label: 'Input Layer Basics' },
-                { icon: PlayCircle, label: 'Hidden Layers Deep Dive' },
-                { icon: Code, label: 'PyTorch Implementation' }
-              ].map((res, i) => (
-                <div key={i} className="flex items-center gap-4 p-3 rounded-xl bg-white/2 border border-white/5 hover:border-primary/40 transition-all cursor-pointer">
-                  <res.icon className="size-4 text-primary" />
-                  <span className="text-[10px] font-black uppercase tracking-tight text-slate-300">{res.label}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        <div className="space-y-4">
-          <h4 className="text-[10px] font-black text-slate-600 uppercase tracking-[0.2em]">Key Terminologies</h4>
-          <div className="flex flex-wrap gap-2">
-            {['Neurons', 'Weights', 'Biases', 'Tensors', 'Softmax'].map(term => (
-              <span key={term} className="px-3 py-1.5 rounded-lg border border-primary/20 bg-primary/5 text-[9px] font-black text-primary uppercase tracking-widest">
-                {term}
-              </span>
-            ))}
+            
+            <AnimatePresence>
+              {isSummaryExpanded && (
+                <motion.div 
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: 'auto', opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  className="border-t border-white/5"
+                >
+                  <div className="p-6 max-h-[50vh] overflow-y-auto custom-scrollbar">
+                    {summary ? (
+                      <div 
+                         className="text-sm text-slate-300 leading-relaxed normal-case"
+                         dangerouslySetInnerHTML={{__html: summary.replace(/\n/g, '<br/>')}}
+                      />
+                    ) : summaryLoading ? (
+                      <p className="text-slate-500 text-xs text-center py-8 uppercase tracking-widest">Generating Summary...</p>
+                    ) : (
+                      <p className="text-red-400 text-xs text-center py-8 uppercase tracking-widest">Failed to load summary</p>
+                    )}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
         </div>
-      </aside>
+      </div>
     </div>
   );
 }

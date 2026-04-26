@@ -41,8 +41,6 @@ function Sidebar() {
   const navItems = [
     { icon: Home, label: 'Home', path: '/' },
     { icon: Library, label: 'My Notebooks', path: '/notebook' },
-    { icon: BrainCircuit, label: 'Mindmap', path: '/mindmap' },
-    { icon: GraduationCap, label: 'MCQ Generator', path: '/quiz' },
   ];
 
   const secondaryItems = [
