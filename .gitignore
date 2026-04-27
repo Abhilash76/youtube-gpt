@@ -17,3 +17,6 @@ tests/__pycache__
 *.png
 *.zip
 *.txt
+
+# Temporary unzipped models
+temp_nomic/
