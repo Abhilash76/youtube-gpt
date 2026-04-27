@@ -12,8 +12,8 @@ import torch
 
 from dotenv import load_dotenv
 from langchain_text_splitters.character import RecursiveCharacterTextSplitter
-from langchain_community.embeddings.ollama import OllamaEmbeddings
-from langchain_community.chat_models.ollama import ChatOllama
+from langchain_ollama import OllamaEmbeddings
+from langchain_ollama import ChatOllama
 from langchain_pinecone import PineconeVectorStore
 from langchain_core.embeddings import Embeddings
 from langchain_core.prompts import ChatPromptTemplate
@@ -108,9 +108,19 @@ class TranscriptRAG:
                     bnb_4bit_quant_type="nf4",
                 )
                 LOG.info(f"Loading quantized Nomic embeddings from: {self.nomic_model_path}")
-                tokenizer = AutoTokenizer.from_pretrained(self.nomic_model_path, trust_remote_code=True)
+                
+                # Robust path discovery: if config.json isn't in root, check subdirectories
+                actual_model_path = self.nomic_model_path
+                if not os.path.exists(os.path.join(actual_model_path, "config.json")):
+                    for root, dirs, files in os.walk(self.nomic_model_path):
+                        if "config.json" in files:
+                            actual_model_path = root
+                            LOG.info(f"Found model config in subdirectory: {actual_model_path}")
+                            break
+
+                tokenizer = AutoTokenizer.from_pretrained(actual_model_path, trust_remote_code=True)
                 model = AutoModel.from_pretrained(
-                    self.nomic_model_path,
+                    actual_model_path,
                     quantization_config=bnb_config,
                     torch_dtype=torch.bfloat16,
                     device_map="auto",
@@ -122,13 +132,11 @@ class TranscriptRAG:
                 self.embed_model = OllamaEmbeddings(
                     model="nomic-embed-text",
                     base_url=self.ollama_base_url,
-                    headers=self.request_headers,
                 )
         else:
             self.embed_model = OllamaEmbeddings(
                 model="nomic-embed-text",
                 base_url=self.ollama_base_url,
-                headers=self.request_headers,
             )
 
         # Initialize Clients
@@ -168,7 +176,6 @@ class TranscriptRAG:
         self.llm = ChatOllama(
             model="gemma4:31b-cloud", 
             base_url=self.ollama_base_url, 
-            headers=self.request_headers
         )
 
     def _sanitize_index_name(self, name: str) -> str:

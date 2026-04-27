@@ -1,3 +1,4 @@
+--extra-index-url https://download.pytorch.org/whl/cpu
 # Core
 numpy==1.26.4
 pandas==2.1.4
@@ -9,7 +10,7 @@ python-dotenv
 torch==2.2.2
 torchvision==0.17.2
 torchaudio==2.2.2
-transformers>=4.40.0
+transformers<4.49.0
 sentence-transformers
 faiss-cpu
 accelerate
@@ -25,12 +26,12 @@ langchain
 langchain-community
 langchain-pinecone
 langchain-text-splitters
+langchain-ollama
 langgraph
 
 # API / UI
 fastapi
 uvicorn
-prometheus-fastapi-instrumentator
 streamlit
 
 # Utilities

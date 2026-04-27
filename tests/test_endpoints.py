@@ -9,13 +9,11 @@ sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'src'))
 
 # Mock all external dependencies that might block during import
 mock_rag = MagicMock()
-mock_instrumentator = MagicMock()
 mock_search = MagicMock()
 
 with patch('rag.rag_workflow.TranscriptRAG', return_value=mock_rag):
-    with patch('prometheus_fastapi_instrumentator.Instrumentator', return_value=mock_instrumentator):
-        with patch('youtubesearchpython.VideosSearch', return_value=mock_search):
-            from backend.main import app
+    with patch('youtubesearchpython.VideosSearch', return_value=mock_search):
+        from backend.main import app
 
 client = TestClient(app)
 

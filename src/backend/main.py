@@ -2,7 +2,6 @@ from fastapi import FastAPI, HTTPException
 from fastapi.responses import StreamingResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-from prometheus_fastapi_instrumentator import Instrumentator
 import sys
 import os
 import re
@@ -86,9 +85,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-# Instrument FastAPI with Prometheus
-Instrumentator().instrument(app).expose(app)
 
 # Initialize TranscriptRAG for Pinecone workflow
 try:
@@ -219,8 +215,8 @@ async def summarize_transcript(request: SummaryRequest):
         raise HTTPException(status_code=500, detail=str(e))
 
 from mcq_service import MCQService
-from recommendation import get_recommendations
-from mindMap import MindMapService
+from backend.recommendation import get_recommendations
+from backend.mindMap import MindMapService
 
 class MCQRequest(BaseModel):
     transcript_text: str
