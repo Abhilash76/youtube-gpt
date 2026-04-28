@@ -80,8 +80,8 @@ class TranscriptRAG:
         self.cohere_api_key = os.getenv("COHERE_API_KEY")  # Added Cohere Key
         
         # 2. Handle OLLAMA_BASE_URL dynamically
-        # Default to host.docker.internal if not provided, which works with the new docker-compose
-        self.ollama_base_url = os.getenv("OLLAMA_BASE_URL", "http://host.docker.internal:11434")
+        # For Ollama Cloud, this must point to https://ollama.com
+        self.ollama_base_url = os.getenv("OLLAMA_BASE_URL", "https://ollama.com")
         
         LOG.info(f"Connecting to Ollama at: {self.ollama_base_url}")
         
@@ -132,11 +132,13 @@ class TranscriptRAG:
                 self.embed_model = OllamaEmbeddings(
                     model="nomic-embed-text",
                     base_url=self.ollama_base_url,
+                    client_kwargs={"headers": self.request_headers},
                 )
         else:
             self.embed_model = OllamaEmbeddings(
                 model="nomic-embed-text",
                 base_url=self.ollama_base_url,
+                client_kwargs={"headers": self.request_headers},
             )
 
         # Initialize Clients
@@ -176,6 +178,7 @@ class TranscriptRAG:
         self.llm = ChatOllama(
             model="gemma4:31b-cloud", 
             base_url=self.ollama_base_url, 
+            client_kwargs={"headers": self.request_headers},
         )
 
     def _sanitize_index_name(self, name: str) -> str:

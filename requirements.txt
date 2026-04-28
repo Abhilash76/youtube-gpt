@@ -38,7 +38,8 @@ streamlit
 gitpython
 youtube-search-python
 youtube-transcript-api
-httpx
+yt-dlp
+httpx[socks]
 
 # Testing
 pytest

@@ -6,17 +6,18 @@ load_dotenv()
 
 from langchain_community.chat_models.ollama import ChatOllama
 
-OLLAMA_BASE_URL = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
 
 class Summarize:
 
     def summarize_topic(transcript_text: str) -> str:
         """Summarize a YouTube transcript using the KimiK2 thinking model (Ollama)."""
         headers = {}
+        if os.getenv('OLLAMA_API_KEY'):
+            headers['Authorization'] = 'Bearer ' + os.getenv('OLLAMA_API_KEY')
 
         llm = ChatOllama(
-            model="kimi-k2-thinking:cloud",
-            base_url=OLLAMA_BASE_URL,
+            model="gemma4:31b-cloud",
+            base_url="https://ollama.com",
             headers=headers,
         )
 

@@ -9,10 +9,10 @@ services:
       - .:/app
     environment:
       - PYTHONPATH=/app/src
-      - OLLAMA_BASE_URL=http://host.docker.internal:11434
+      - OLLAMA_BASE_URL=https://ollama.com
       - PINECONE_API_KEY=${PINECONE_API_KEY}
       - COHERE_API_KEY=${COHERE_API_KEY}
-      - NOMIC_EMBED_MODEL_PATH=/app/nomic-embed-text-v1-4bit
+      - NOMIC_EMBED_MODEL_PATH=/models/nomic-embed-text-v1-4bit
     extra_hosts:
       - "host.docker.internal:host-gateway"
 

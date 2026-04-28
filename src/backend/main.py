@@ -58,7 +58,19 @@ def patch_youtube_search_httpx():
     RequestCore.syncPostRequest = fixed_sync_post
     RequestCore.syncGetRequest = fixed_sync_get
 
-# Apply the patch BEFORE importing VideosSearch
+    # Additional patch for ComponentHandler to prevent TypeError: can only concatenate str (not "NoneType") to str
+    from youtubesearchpython.handlers.componenthandler import ComponentHandler
+    original_getVideoComponent = ComponentHandler._getVideoComponent
+
+    def patched_getVideoComponent(self, element):
+        component = original_getVideoComponent(self, element)
+        if component and 'channel' in component and component['channel'].get('id') is None:
+            component['channel']['id'] = 'unknown'
+            component['channel']['link'] = 'https://www.youtube.com/channel/unknown'
+        return component
+
+    ComponentHandler._getVideoComponent = patched_getVideoComponent
+
 try:
     patch_youtube_search_httpx()
 except Exception as e:
@@ -187,6 +199,8 @@ async def get_transcript(request: TranscriptRequest):
         
         return {"transcript": transcript_text, "video_id": video_id}
     except Exception as e:
+        print(f"Transcript error for {request.video_url}: {e}")
+        print(traceback.format_exc())
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/ingest")
@@ -274,6 +288,7 @@ async def recommend_literature(request: RecommendRequest):
     )}
 
 class MindMapRequest(BaseModel):
+    video_id: str
     transcript_text: str
 
 @app.post("/mindmap")
@@ -384,7 +399,7 @@ async def process_all(request: MindMapRequest):
         loop = asyncio.get_event_loop()
         
         # 1. Start all tasks concurrently
-        ingest_task = loop.run_in_executor(executor, transcript_rag.ingest_transcript, request.transcript_text, "temp_vid", "agentic")
+        ingest_task = loop.run_in_executor(executor, transcript_rag.ingest_transcript, request.transcript_text, request.video_id, "agentic")
         summary_task = loop.run_in_executor(executor, Summarize.summarize_topic, request.transcript_text)
         mcq_task = loop.run_in_executor(executor, MCQService.generate_mcqs_from_text, request.transcript_text, transcript_rag.llm)
         mindmap_task = loop.run_in_executor(executor, MindMapService.generate_mind_map, request.transcript_text, transcript_rag.llm)

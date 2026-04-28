@@ -7,6 +7,7 @@ RUN apt-get update && apt-get upgrade -y && apt-get install -y --no-install-reco
     git \
     curl \
     unzip \
+    nodejs \
     && rm -rf /var/lib/apt/lists/*
 
 RUN pip install --upgrade pip setuptools wheel
@@ -19,7 +20,8 @@ COPY . .
 
 # Unzip the local quantized Nomic model into a fixed path inside the image
 RUN if [ -f "nomic-embed-text-v1-4bit-20260302T085500Z-1-001.zip" ]; then \
-      unzip -q nomic-embed-text-v1-4bit-20260302T085500Z-1-001.zip -d /app/nomic-embed-text-v1-4bit; \
+      mkdir -p /models && \
+      unzip -q nomic-embed-text-v1-4bit-20260302T085500Z-1-001.zip -d /models/nomic-embed-text-v1-4bit; \
     fi
 
 ENV PYTHONPATH=/app/src
